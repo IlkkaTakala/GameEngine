@@ -21,7 +21,7 @@ namespace dae
 		GameObject& operator=(GameObject&& other) = delete;
 
 		void AddComponent(BaseComponent* Component);
-		void AddTickSystem(const std::function<void(float)>& system);
+		void AddTickSystem(const std::function<void(GameObject*, float)>& system);
 		
 		template<class T>
 		bool RemoveComponent() {
@@ -64,6 +64,6 @@ namespace dae
 
 		GameObject* Parent;
 		std::list<GameObject*> Children;
-		std::vector<std::function<void(float)>> TickSystems;
+		std::vector<std::function<void(GameObject*, float)>> TickSystems;
 	};
 }

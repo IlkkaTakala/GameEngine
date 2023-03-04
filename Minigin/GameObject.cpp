@@ -20,7 +20,7 @@ void dae::GameObject::AddComponent(BaseComponent* Component)
 	Components.emplace(Component->GetType(), Component->GetPermanentReference());
 }
 
-void dae::GameObject::AddTickSystem(const std::function<void(float)>& system)
+void dae::GameObject::AddTickSystem(const std::function<void(GameObject*, float)>& system)
 {
 	TickSystems.push_back(system);
 }
@@ -34,7 +34,7 @@ bool dae::GameObject::HasComponent(const BaseComponent* component) const
 void dae::GameObject::Update(float delta) {
 
 	for (auto& s : TickSystems) {
-		s(delta);
+		s(this, delta);
 	}
 	for (auto& [type, c] : Components) {
 		c.Get()->Tick(delta);
@@ -43,7 +43,7 @@ void dae::GameObject::Update(float delta) {
 
 void dae::GameObject::SetParent(GameObject* parent, bool /*keepRelative*/) {
 
-	Parent->RemoveChild(this);
+	if (Parent) Parent->RemoveChild(this);
 	Parent = parent;
 	
 	for (auto& [type, c] : Components) {
