@@ -9,6 +9,7 @@
 #include "SceneManager.h"
 #include "Renderer.h"
 #include "ResourceManager.h"
+#include "BaseComponent.h"
 
 
 SDL_Window* g_window{};
@@ -101,7 +102,7 @@ void dae::Minigin::Run(const std::function<void()>& load)
 		sceneManager.Update(deltaTime);
 		renderer.Render();
 
-		auto time = target - chr::duration<double>(chr::steady_clock::now() - currentTime);
+		auto time = target - chr::duration<double>(chr::high_resolution_clock::now() - currentTime);
 		std::this_thread::sleep_for(time);
 	}
 }

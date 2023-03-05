@@ -3,6 +3,7 @@
 #pragma warning(push)
 #pragma warning(disable : 4201)
 #include <glm/gtx/transform.hpp>
+#pragma warning(disable : 6001)
 #include <glm/gtx/matrix_decompose.hpp>
 #pragma warning(pop)
 
@@ -119,6 +120,15 @@ const glm::mat4& dae::TransformComponent::GetLocalTransform()
 	if (LocationDirty) Recalculate();
 
 	return ToParent;
+}
+
+void dae::TransformComponent::OnTreeChanged(bool /*keepRelative*/)
+{
+	// TODO:
+	// Keep relative doesn't work yet, we need also begin tree change notify to 
+	// calculate proper world position at the moment of attachment
+
+	MarkDirty();
 }
 
 void dae::TransformComponent::MarkDirty()

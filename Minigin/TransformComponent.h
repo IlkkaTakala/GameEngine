@@ -26,6 +26,10 @@ namespace dae
 		const glm::mat4& GetWorldTransform();
 		const glm::mat4& GetLocalTransform();
 
+	protected:
+
+		virtual void OnTreeChanged(bool keepRelative);
+
 	private:
 
 		void MarkDirty();

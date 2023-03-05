@@ -11,7 +11,8 @@ namespace dae {
 	
 	/*
 	This does some automated things to make class comparisons possible without casts.
-	Also manages ECS and references.
+	Also manages ECS and references, and gives possiblitity to refer to a class by string.
+	Variables and vectors have static lifespan and will be destroyed when the program quits.
 	*/
 #define COMPONENT(CLASS) private: inline static bool registered = init_component<CLASS>(#CLASS);\
 	\
@@ -52,7 +53,6 @@ private: virtual void __remove_component() { \
 public: static CLASS* GetObject(size_t id_t) { \
 	return &__object_list()[id_t]; \
 } \
-public: ComponentRef GetPermanentReference() { return ComponentRef{ id, type }; } \
 private:\
 
 class GameObject;
@@ -97,7 +97,7 @@ protected:
 
 	virtual void OnCreated() {}
 	virtual void OnDestroyed() {}
-	virtual void OnTreeChanged() {}
+	virtual void OnTreeChanged(bool /*keepRelative*/) {}
 
 
 public:
@@ -107,7 +107,14 @@ public:
 	bool IsValid() const;
 	GameObject* GetOwner() const { return owner; }
 	ComponentType GetType() const { return type; }
+	ComponentRef GetPermanentReference() { return ComponentRef{ id, type }; } \
 
+	// TODO: Will clear the default objects, first remove add proper garbage collection
+	/*static void ClearDefaultObjects() {
+		for (auto& [type, ptr] : __object_map()) {
+			delete ptr;
+		}
+	}*/
 };
 
 

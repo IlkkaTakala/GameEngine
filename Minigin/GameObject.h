@@ -62,7 +62,7 @@ namespace dae
 
 		std::map<int, ComponentRef> Components;
 
-		GameObject* Parent;
+		GameObject* Parent{ nullptr };
 		std::list<GameObject*> Children;
 		std::vector<std::function<void(GameObject*, float)>> TickSystems;
 	};
