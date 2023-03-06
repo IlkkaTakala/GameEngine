@@ -13,7 +13,7 @@ namespace dae
 	public:
 		virtual void Update(float delta);
 
-		GameObject() = default;
+		GameObject();
 		virtual ~GameObject();
 		GameObject(const GameObject& other) = delete;
 		GameObject(GameObject&& other) = delete;
@@ -22,6 +22,10 @@ namespace dae
 
 		void AddComponent(BaseComponent* Component);
 		void AddTickSystem(const std::function<void(GameObject*, float)>& system);
+
+		void Destroy();
+		static void ForceCleanObjects();
+		static void DeleteMarked();
 		
 		template<class T>
 		bool RemoveComponent() {
@@ -59,11 +63,14 @@ namespace dae
 	private:
 
 		void RemoveChild(GameObject* child);
+		void AddChild(GameObject* child);
 
 		std::map<int, ComponentRef> Components;
 
 		GameObject* Parent{ nullptr };
 		std::list<GameObject*> Children;
 		std::vector<std::function<void(GameObject*, float)>> TickSystems;
+
+		bool MarkedForDelete{ false };
 	};
 }

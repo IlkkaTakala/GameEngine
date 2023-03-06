@@ -123,7 +123,6 @@ T* CreateComponent(GameObject* Owner = nullptr) {
 	T n{};
 	n.__set_type(T::StaticType());
 	T* c_ptr = T::__add_component(std::move(n));
-	c_ptr->alive = true;
 	if (Owner) Owner->AddComponent(c_ptr);
 	c_ptr->OnCreated();
 	return c_ptr;

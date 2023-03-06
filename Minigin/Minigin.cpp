@@ -8,6 +8,7 @@
 #include "InputManager.h"
 #include "SceneManager.h"
 #include "Renderer.h"
+#include "Time.h"
 #include "ResourceManager.h"
 #include "BaseComponent.h"
 
@@ -75,6 +76,7 @@ dae::Minigin::~Minigin()
 	SDL_DestroyWindow(g_window);
 	g_window = nullptr;
 	SDL_Quit();
+	GameObject::ForceCleanObjects();
 }
 
 void dae::Minigin::Run(const std::function<void()>& load)
@@ -98,9 +100,12 @@ void dae::Minigin::Run(const std::function<void()>& load)
 		const float deltaTime = chr::duration<float>(currentTime - startTime).count();
 		startTime = currentTime;
 
+		Time::GetInstance().Update(deltaTime);
 		doContinue = input.ProcessInput();
 		sceneManager.Update(deltaTime);
 		renderer.Render();
+
+		GameObject::DeleteMarked();
 
 		auto time = target - chr::duration<double>(chr::high_resolution_clock::now() - currentTime);
 		std::this_thread::sleep_for(time);
