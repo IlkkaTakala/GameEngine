@@ -38,12 +38,14 @@ void dae::GameObject::AddTickSystem(const std::function<void(GameObject*, float)
 
 void dae::GameObject::Destroy()
 {
+	if (MarkedForDelete) return;
+	MarkedForDelete = true;
+	SceneRef->Remove(this, false);
 	for (auto it = Children.begin(); it != Children.end(); it = Children.begin()) {
 		(*it)->Destroy();
 	}
 	
 	if (Parent) Parent->RemoveChild(this);
-	MarkedForDelete = true;
 }
 
 void dae::GameObject::ForceCleanObjects()
@@ -83,6 +85,9 @@ void dae::GameObject::Update(float delta) {
 	for (auto& [type, c] : Components) {
 		c.Get()->Tick(delta);
 	}
+	for (auto& o : Children) {
+		o->Update(delta);
+	}
 }
 
 void dae::GameObject::SetParent(GameObject* parent, bool keepRelative) {
@@ -101,8 +106,10 @@ void dae::GameObject::SetParent(GameObject* parent, bool keepRelative) {
 void dae::GameObject::RemoveChild(GameObject* child)
 {
 	Children.remove(child);
+	SceneRef->Add(child);
 }
 
 void dae::GameObject::AddChild(GameObject* child) {
 	Children.push_back(child);
+	SceneRef->Remove(child, false);
 }

@@ -11,14 +11,16 @@ Scene::~Scene() = default;
 
 void Scene::Add(GameObject* object)
 {
+	if (object->MarkedForDelete) return;
 	m_objects.emplace_back(std::move(object));
+	object->SceneRef = this;
 }
 
-void Scene::Remove(GameObject* object)
+void Scene::Remove(GameObject* object, bool destroy)
 {
 	auto it = std::find(m_objects.begin(), m_objects.end(), object);
 	if (it != m_objects.end()) {
-		(*it)->Destroy();
+		if (destroy) (*it)->Destroy();
 		m_objects.erase(it);
 	}
 }

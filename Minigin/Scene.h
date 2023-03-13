@@ -9,7 +9,7 @@ namespace dae
 		friend Scene& SceneManager::CreateScene(const std::string& name);
 	public:
 		void Add(GameObject* object);
-		void Remove(GameObject* object);
+		void Remove(GameObject* object, bool destroy = true);
 		void RemoveAll();
 
 		void Update(float delta);

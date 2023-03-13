@@ -4,6 +4,7 @@
 #include <list>
 #include <functional>
 #include "ComponentRef.h"
+#include "Scene.h"
 
 namespace dae
 {
@@ -61,12 +62,14 @@ namespace dae
 		std::list<GameObject*>& GetChildren() { return Children; }
 
 	private:
+		friend class Scene;
 
 		void RemoveChild(GameObject* child);
 		void AddChild(GameObject* child);
 
 		std::map<int, ComponentRef> Components;
 
+		Scene* SceneRef;
 		GameObject* Parent{ nullptr };
 		std::list<GameObject*> Children;
 		std::vector<std::function<void(GameObject*, float)>> TickSystems;
