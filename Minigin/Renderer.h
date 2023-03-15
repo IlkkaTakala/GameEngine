@@ -16,6 +16,7 @@ namespace dae
 		SDL_Color m_clearColor{};	
 
 		std::vector<std::function<void(void)>> m_renderSystems;
+		std::vector<std::function<void(void)>> m_imGuiSystems;
 
 	public:
 		void Init(SDL_Window* window);
@@ -30,7 +31,9 @@ namespace dae
 		void AddRenderSubsystem(const std::function<void(void)>& system) {
 			m_renderSystems.push_back(system);
 		}
-
+		void AddImGuiSystem(const std::function<void(void)>& system) {
+			m_imGuiSystems.push_back(system);
+		}
 		const SDL_Color& GetBackgroundColor() const { return m_clearColor; }
 		void SetBackgroundColor(const SDL_Color& color) { m_clearColor = color; }
 	};

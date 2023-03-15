@@ -24,6 +24,10 @@ public: static auto& __object_list() { \
 	static std::vector<CLASS> Objects; \
 	return Objects; \
 } \
+public: static int& __object_list_counter() { \
+	static int Counter; \
+	return Counter; \
+} \
 public: virtual BaseComponent* __get_object_as_base(size_t id_t) { \
 	if (__object_list().size() <= id_t) return nullptr; \
 	return dynamic_cast<BaseComponent*>(&__object_list()[id_t]);\
@@ -35,6 +39,8 @@ private: static auto& __free_list() { \
 public: static CLASS* __add_component(CLASS&& c) { \
 	if (__free_list().empty()) {\
 		c.id = __object_list().size();\
+		if (c.id >= __object_list().capacity()) \
+			__object_list_counter()++; \
 		__object_list().push_back(std::move(c)); \
 		return &*__object_list().rbegin();\
 	}\
@@ -107,9 +113,9 @@ public:
 	bool IsValid() const;
 	GameObject* GetOwner() const { return owner; }
 	ComponentType GetType() const { return type; }
-	ComponentRef GetPermanentReference() { return ComponentRef{ id, type }; } \
+	ComponentRef GetPermanentReference() { return ComponentRef{ id, type }; }
 
-	// TODO: Will clear the default objects, first remove add proper garbage collection
+	// TODO: Will clear the default objects, first add proper garbage collection
 	/*static void ClearDefaultObjects() {
 		for (auto& [type, ptr] : __object_map()) {
 			delete ptr;

@@ -9,6 +9,8 @@ namespace dae {
 	{
 		size_t ID;
 		ComponentType type;
+		mutable BaseComponent* ptr{ nullptr };
+		mutable int check{ -1 };
 
 	public:
 		ComponentRef(size_t id, ComponentType type) : ID(id), type(type) {}
@@ -17,8 +19,11 @@ namespace dae {
 
 		template <class G>
 		G* Get() const {
+			if (G::__object_list_counter() == check) return (G*)ptr;
 			if (G::StaticType() != type) return nullptr;
-			return G::GetObject(ID);
+			ptr = (BaseComponent*)G::GetObject(ID);
+			check = G::__object_list_counter();
+			return (G*)ptr;
 		}
 
 		BaseComponent* Get() const;

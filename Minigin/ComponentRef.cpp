@@ -3,5 +3,9 @@
 
 dae::BaseComponent* dae::ComponentRef::Get() const
 {
-	return BaseComponent::__object_map()[type]->__get_object_as_base(ID);
+	auto t = BaseComponent::__object_map()[type];
+	if (t->__object_list_counter() == check) return ptr;
+	ptr = t->__get_object_as_base(ID);
+	check = t->__object_list_counter();
+	return ptr;
 }

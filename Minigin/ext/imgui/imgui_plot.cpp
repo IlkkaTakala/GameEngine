@@ -1,8 +1,5 @@
 #include <imgui_plot.h>
 #include <imgui.h>
-#ifndef IMGUI_DEFINE_MATH_OPERATORS
-#define IMGUI_DEFINE_MATH_OPERATORS
-#endif
 #include <imgui_internal.h>
 
 namespace ImGui {
@@ -12,7 +9,7 @@ static float rescale(float t, float min, float max, PlotConfig::Scale::Type type
     case PlotConfig::Scale::Linear:
         return t;
     case PlotConfig::Scale::Log10:
-        return log10(ImLerp(min, max, t) / min) / log10(max / min);
+        return (float)log10(ImLerp(min, max, t) / min) / (float)log10(max / min);
     }
     return 0;
 }
@@ -23,7 +20,7 @@ static float rescale_inv(float t, float min, float max, PlotConfig::Scale::Type 
     case PlotConfig::Scale::Linear:
         return t;
     case PlotConfig::Scale::Log10:
-        return (pow(max/min, t) * min - min) / (max - min);
+        return ((float)pow(max/min, t) * min - min) / (max - min);
     }
     return 0;
 }
@@ -84,8 +81,8 @@ PlotStatus Plot(const char* label, const PlotConfig& conf) {
         res_w -= 1;
         int item_count = conf.values.count - 1;
 
-        float x_min = conf.values.offset;
-        float x_max = conf.values.offset + conf.values.count - 1;
+        float x_min = (float)conf.values.offset;
+        float x_max = (float)conf.values.offset + conf.values.count - 1;
         if (conf.values.xs) {
             x_min = conf.values.xs[size_t(x_min)];
             x_max = conf.values.xs[size_t(x_max)];
@@ -107,17 +104,17 @@ PlotStatus Plot(const char* label, const PlotConfig& conf) {
                                     0.0f : (1.0f / (conf.scale.max - conf.scale.min));
 
         if (conf.grid_x.show) {
-            int y0 = inner_bb.Min.y;
-            int y1 = inner_bb.Max.y;
+            int y0 = (int)inner_bb.Min.y;
+            int y1 = (int)inner_bb.Max.y;
             switch (conf.scale.type) {
             case PlotConfig::Scale::Linear: {
                 float cnt = conf.values.count / (conf.grid_x.size / conf.grid_x.subticks);
                 float inc = 1.f / cnt;
                 for (int i = 0; i <= cnt; ++i) {
-                    int x0 = ImLerp(inner_bb.Min.x, inner_bb.Max.x, i * inc);
+                    int x0 = (int)ImLerp(inner_bb.Min.x, inner_bb.Max.x, i * inc);
                     window->DrawList->AddLine(
-                        ImVec2(x0, y0),
-                        ImVec2(x0, y1),
+                        ImVec2((float)x0, (float)y0),
+                        ImVec2((float)x0, (float)y1),
                         IM_COL32(200, 200, 200, (i % conf.grid_x.subticks) ? 128 : 255));
                 }
                 break;
@@ -129,11 +126,11 @@ PlotStatus Plot(const char* label, const PlotConfig& conf) {
                         float x = start * i;
                         if (x < x_min) continue;
                         if (x > x_max) break;
-                        float t = log10(x / x_min) / log10(x_max / x_min);
-                        int x0 = ImLerp(inner_bb.Min.x, inner_bb.Max.x, t);
+                        float t = float(log10(x / x_min) / log10(x_max / x_min));
+                        int x0 = (int)ImLerp(inner_bb.Min.x, inner_bb.Max.x, t);
                         window->DrawList->AddLine(
-                            ImVec2(x0, y0),
-                            ImVec2(x0, y1),
+                            ImVec2((float)x0, (float)y0),
+                            ImVec2((float)x0, (float)y1),
                             IM_COL32(200, 200, 200, (i > 1) ? 128 : 255));
                     }
                     start *= 10.f;
@@ -143,15 +140,15 @@ PlotStatus Plot(const char* label, const PlotConfig& conf) {
             }
         }
         if (conf.grid_y.show) {
-            int x0 = inner_bb.Min.x;
-            int x1 = inner_bb.Max.x;
+            int x0 = (int)inner_bb.Min.x;
+            int x1 = (int)inner_bb.Max.x;
             float cnt = (conf.scale.max - conf.scale.min) / (conf.grid_y.size / conf.grid_y.subticks);
             float inc = 1.f / cnt;
             for (int i = 0; i <= cnt; ++i) {
-                int y0 = ImLerp(inner_bb.Min.y, inner_bb.Max.y, i * inc);
+                int y0 = (int)ImLerp(inner_bb.Min.y, inner_bb.Max.y, i * inc);
                 window->DrawList->AddLine(
-                    ImVec2(x0, y0),
-                    ImVec2(x1, y0),
+                    ImVec2((float)x0, (float)y0),
+                    ImVec2((float)x1, (float)y0),
                     IM_COL32(0, 0, 0, (i % conf.grid_y.subticks) ? 16 : 64));
             }
         }
@@ -219,7 +216,7 @@ PlotStatus Plot(const char* label, const PlotConfig& conf) {
                     uint32_t end = start;
                     if (conf.selection.sanitize_fn)
                         end = conf.selection.sanitize_fn(end - start) + start;
-                    if (end < conf.values.offset + conf.values.count) {
+                    if (end < uint32_t(conf.values.offset + conf.values.count)) {
                         *conf.selection.start = start;
                         *conf.selection.length = end - start;
                         status = PlotStatus::selection_updated;
@@ -235,7 +232,7 @@ PlotStatus Plot(const char* label, const PlotConfig& conf) {
                     if (end > start) {
                         if (conf.selection.sanitize_fn)
                             end = conf.selection.sanitize_fn(end - start) + start;
-                        if (end < conf.values.offset + conf.values.count) {
+                        if (end < uint32_t(conf.values.offset + conf.values.count)) {
                             *conf.selection.length = end - start;
                             status = PlotStatus::selection_updated;
                         }
@@ -244,7 +241,7 @@ PlotStatus Plot(const char* label, const PlotConfig& conf) {
                     ClearActiveID();
                 }
             }
-            float fSelectionStep = 1.0 / item_count;
+            float fSelectionStep = 1.f / item_count;
             ImVec2 pos0 = ImLerp(inner_bb.Min, inner_bb.Max,
                                  ImVec2(fSelectionStep * *conf.selection.start, 0.f));
             ImVec2 pos1 = ImLerp(inner_bb.Min, inner_bb.Max,
