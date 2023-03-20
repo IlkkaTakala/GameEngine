@@ -1,32 +1,37 @@
 #pragma once
 #include <map>
 #include <functional>
-#define	WIN32_LEAN_AND_MEAN
-#include <Windows.h>
-#include <Xinput.h>
+#include <memory>
 #include "Singleton.h"
 
 namespace dae
 {
-	struct UserData
-	{
-		XINPUT_STATE State;
-		WORD ButtonsReleased;
-		WORD ButtonsPressed;
+	class InputComponent;
+	typedef unsigned int User;
 
-		std::map<int, std::function<void(bool)>> ButtonCommands;
-		std::map<int, std::function<void(float)>> AxisCommands;
-		std::map<int, std::function<void(float, float)>> StickCommands;
+	enum class ButtonState
+	{
+		Down,
+		Up,
 	};
 
 	class InputManager final : public Singleton<InputManager>
 	{
 	public:
+		InputManager();
+		~InputManager();
+
 		bool ProcessInput();
 
-	private:
+		void RegisterInputComponent(InputComponent* component, User user);
+		void UnregisterInputComponent(InputComponent* component);
 
-		std::map<int, UserData> Users;
+		ButtonState GetKeyState(User user, unsigned int key);
+		float GetAxisValue(User user, unsigned int axis);
+
+	private:
+		class InputManagerImpl;
+		InputManagerImpl* Impl;
 	};
 
 }

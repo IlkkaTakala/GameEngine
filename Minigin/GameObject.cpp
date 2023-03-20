@@ -40,7 +40,7 @@ void dae::GameObject::Destroy()
 {
 	if (MarkedForDelete) return;
 	MarkedForDelete = true;
-	SceneRef->Remove(this, false);
+	if (SceneRef) SceneRef->Remove(this, false);
 	for (auto it = Children.begin(); it != Children.end(); it = Children.begin()) {
 		(*it)->Destroy();
 	}

@@ -16,6 +16,8 @@ namespace dae {
 	*/
 #define COMPONENT(CLASS) private: inline static bool registered = init_component<CLASS>(#CLASS);\
 	\
+	template <class T>\
+	friend T* CreateComponent(GameObject* Owner);\
 public: static ComponentType StaticType() {\
 	static int type_id = BaseComponent::__id_map()[#CLASS];\
 	return type_id; \
@@ -36,7 +38,7 @@ private: static auto& __free_list() { \
 	static std::queue<size_t> free; \
 	return free; \
 } \
-public: static CLASS* __add_component(CLASS&& c) { \
+private: static CLASS* __add_component(CLASS&& c) { \
 	if (__free_list().empty()) {\
 		c.id = __object_list().size();\
 		if (c.id >= __object_list().capacity()) \
@@ -67,9 +69,6 @@ class BaseComponent
 private:
 	friend class GameObject;
 	friend class ComponentRef;
-
-	template <class T>
-	friend T* CreateComponent(GameObject* Owner);
 
 	static int componentCount;
 	GameObject* owner{ nullptr };
