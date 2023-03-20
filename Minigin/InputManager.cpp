@@ -18,5 +18,11 @@ bool dae::InputManager::ProcessInput()
 		ImGui_ImplSDL2_ProcessEvent(&e);
 	}
 
+	for (auto& [user, state] : Users) {
+		XInputGetState(user, &state.State);
+
+
+	}
+
 	return true;
 }

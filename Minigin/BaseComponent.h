@@ -103,7 +103,8 @@ protected:
 
 	virtual void OnCreated() {}
 	virtual void OnDestroyed() {}
-	virtual void OnTreeChanged(bool /*keepRelative*/) {}
+	virtual void OnTreeBeginChange(AttachRules /*rules*/) {}
+	virtual void OnTreeChanged(AttachRules /*rules*/) {}
 
 
 public:

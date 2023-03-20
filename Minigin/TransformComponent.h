@@ -10,25 +10,26 @@ namespace dae
 
 	public:
 		const glm::vec3& GetPosition();
-		void SetPosition(float x, float y, float z);
+		void SetPosition(const glm::vec3& pos);
 		const float& GetRotation();
 		void SetRotation(float r);
 		const glm::vec3& GetScale();
-		void SetScale(float x, float y, float z);
+		void SetScale(const glm::vec3& scale);
 
 		const glm::vec3& GetLocalPosition() const { return Position; }
-		void SetLocalPosition(float x, float y, float z);
+		void SetLocalPosition(const glm::vec3& pos);
 		const float& GetLocalRotation() const { return Rotation; }
 		void SetLocalRotation(float r);
 		const glm::vec3& GetLocalScale() const { return Scale; }
-		void SetLocalScale(float x, float y, float z);
+		void SetLocalScale(const glm::vec3& scale);
 
 		const glm::mat4& GetWorldTransform();
 		const glm::mat4& GetLocalTransform();
 
 	protected:
 
-		virtual void OnTreeChanged(bool keepRelative);
+		virtual void OnTreeBeginChange(AttachRules rules);
+		virtual void OnTreeChanged(AttachRules rules);
 
 	private:
 

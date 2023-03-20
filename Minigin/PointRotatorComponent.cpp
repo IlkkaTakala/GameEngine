@@ -8,10 +8,10 @@ void dae::PointRotatorComponent::Tick(float delta)
 
 	auto trans = GetOwner()->GetComponent<TransformComponent>();
 	if (trans) {
-		trans->SetLocalPosition(
+		trans->SetLocalPosition({
 			Origin.x + Original.x * cos(TotalTime) - Original.y * sin(TotalTime),
 			Origin.y + Original.x * sin(TotalTime) - Original.y * cos(TotalTime),
-			0
+			0 }
 		);
 	}
 }

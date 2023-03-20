@@ -14,9 +14,9 @@ const glm::vec3& dae::TransformComponent::GetPosition()
 	return WorldPosition;
 }
 
-void dae::TransformComponent::SetPosition(const float x, const float y, const float z)
+void dae::TransformComponent::SetPosition(const glm::vec3& pos)
 {
-	glm::vec3 loc(x, y, z);
+	glm::vec3 loc(pos.x, pos.y, pos.z);
 
 	glm::vec3 origin(0.f);
 	auto parent = GetOwner()->GetParent();
@@ -30,7 +30,7 @@ void dae::TransformComponent::SetPosition(const float x, const float y, const fl
 	}
 
 	glm::vec3 res = loc - origin;
-	SetLocalPosition(res.x, res.y, res.z);
+	SetLocalPosition(res);
 }
 
 const float& dae::TransformComponent::GetRotation()
@@ -64,9 +64,9 @@ const glm::vec3& dae::TransformComponent::GetScale()
 	return WorldScale;
 }
 
-void dae::TransformComponent::SetScale(float x, float y, float z)
+void dae::TransformComponent::SetScale(const glm::vec3& scale)
 {
-	glm::vec3 loc(x, y, z);
+	glm::vec3 loc(scale.x, scale.y, scale.z);
 
 	glm::vec3 origin(0.f);
 	auto parent = GetOwner()->GetParent();
@@ -80,14 +80,12 @@ void dae::TransformComponent::SetScale(float x, float y, float z)
 	}
 
 	glm::vec3 res = loc - origin;
-	SetLocalScale(res.x, res.y, res.z);
+	SetLocalScale(res);
 }
 
-void dae::TransformComponent::SetLocalPosition(float x, float y, float z)
+void dae::TransformComponent::SetLocalPosition(const glm::vec3& pos)
 {
-	Position.x = x;
-	Position.y = y;
-	Position.z = z;
+	Position = pos;
 
 	MarkDirty();
 }
@@ -99,11 +97,9 @@ void dae::TransformComponent::SetLocalRotation(float r)
 	MarkDirty();
 }
 
-void dae::TransformComponent::SetLocalScale(float x, float y, float z)
+void dae::TransformComponent::SetLocalScale(const glm::vec3& scale)
 {
-	Scale.x = x;
-	Scale.y = y;
-	Scale.z = z;
+	Scale = scale;
 
 	MarkDirty();
 }
@@ -122,12 +118,17 @@ const glm::mat4& dae::TransformComponent::GetLocalTransform()
 	return ToParent;
 }
 
-void dae::TransformComponent::OnTreeChanged(bool /*keepRelative*/)
+void dae::TransformComponent::OnTreeBeginChange(AttachRules rules)
 {
-	// TODO:
-	// Keep relative doesn't work yet, we need also begin tree change notify to 
-	// calculate proper world position at the moment of attachment
+	if (rules.KeepWorldTransform) {
+		SetLocalPosition(GetPosition());
+		SetLocalRotation(GetRotation());
+		SetLocalScale(GetScale());
+	}
+}
 
+void dae::TransformComponent::OnTreeChanged(AttachRules /*rules*/)
+{
 	MarkDirty();
 }
 

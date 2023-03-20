@@ -8,6 +8,11 @@
 
 namespace dae
 {
+	struct AttachRules 
+	{
+		bool KeepWorldTransform{ true };
+	};
+
 	class BaseComponent;
 	class GameObject final
 	{
@@ -57,7 +62,7 @@ namespace dae
 
 		bool HasComponent(const BaseComponent* component) const;
 
-		void SetParent(GameObject* parent, bool keepRelative = true);
+		void SetParent(GameObject* parent, AttachRules rules = AttachRules());
 		GameObject* GetParent() const { return Parent; }
 		std::list<GameObject*>& GetChildren() { return Children; }
 

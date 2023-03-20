@@ -90,15 +90,14 @@ void dae::GameObject::Update(float delta) {
 	}
 }
 
-void dae::GameObject::SetParent(GameObject* parent, bool keepRelative) {
+void dae::GameObject::SetParent(GameObject* parent, AttachRules rules) {
 	if (MarkedForDelete) return;
 	if (Parent) Parent->RemoveChild(this);
 	Parent = parent;
 	
 	if (Parent) Parent->AddChild(this);
-	// TODO: Keep relative should be replaced with tree change struct that can contain more information about the change
 	for (auto& [type, c] : Components) {
-		c.Get()->OnTreeChanged(keepRelative);
+		c.Get()->OnTreeChanged(rules);
 	}
 
 }
