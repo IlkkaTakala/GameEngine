@@ -28,14 +28,24 @@ namespace dae
 
 		SDL_Renderer* GetSDLRenderer() const;
 
+		template <class T>
+		bool MakeRenderable() {
+			AddRenderSubsystem([]() {
+				for (auto& o : T::__object_list()) {
+					if (o.IsValid())
+						o.Render();
+				}
+			});
+			return true;
+		}
+
+		const SDL_Color& GetBackgroundColor() const { return m_clearColor; }
+		void SetBackgroundColor(const SDL_Color& color) { m_clearColor = color; }
+
+	private:
 		void AddRenderSubsystem(const std::function<void(void)>& system) {
 			m_renderSystems.push_back(system);
 		}
-		void AddImGuiSystem(const std::function<void(void)>& system) {
-			m_imGuiSystems.push_back(system);
-		}
-		const SDL_Color& GetBackgroundColor() const { return m_clearColor; }
-		void SetBackgroundColor(const SDL_Color& color) { m_clearColor = color; }
 	};
 }
 

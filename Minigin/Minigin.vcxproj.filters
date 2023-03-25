@@ -105,6 +105,12 @@
     <ClInclude Include="InputComponent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Delegates.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Command.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ResourceManager.cpp">
@@ -186,6 +192,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="InputComponent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Delegates.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Command.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

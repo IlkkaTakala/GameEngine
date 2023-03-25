@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
 #include "BaseComponent.h"
+#include "Renderer.h"
 
 namespace dae {
 
@@ -8,7 +9,7 @@ class Texture2D;
 class SpriteComponent : public BaseComponent
 {
 	COMPONENT(SpriteComponent)
-
+	ENABLE_RENDERING(SpriteComponent);
 public:
 
 	void Render();

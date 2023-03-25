@@ -12,13 +12,16 @@ public:
 
 	void SetUserFocus(User user);
 	void SetInputEnabled(bool enabled);
+	void OnDestroyed() override;
 
-	void BindAction(int action, std::function<void(void)> callback);
-	void BindAxisAction(int action, std::function<void(float)> callback);
-	void Bind2DAction(int action, std::function<void(float, float)> callback);
+	void BindAction(const std::string& action, std::function<void()> callback);
+	void BindAxisAction(const std::string& action, std::function<void(float)> callback);
+	void Bind2DAction(const std::string& action, std::function<void(float, float)> callback);
 
 	User GetCurrentUser() const { return CurrentUser; }
 
+	void TriggerAction(int action);
+	void TriggerAxisAction(int action, float value);
 	void Trigger2DAction(int action, float x, float y);
 
 private:
@@ -26,6 +29,8 @@ private:
 	User CurrentUser{ 0 };
 	bool ReceivesInput{ true };
 
+	std::map<int, std::function<void()>> Actions;
+	std::map<int, std::function<void(float)>> ActionsAxis;
 	std::map<int, std::function<void(float, float)>> Actions2D;
 
 };

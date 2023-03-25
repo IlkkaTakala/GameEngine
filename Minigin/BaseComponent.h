@@ -30,6 +30,9 @@ public: static int& __object_list_counter() { \
 	static int Counter; \
 	return Counter; \
 } \
+private: virtual int& __object_list_counter_virtual() { \
+	return __object_list_counter(); \
+} \
 public: virtual BaseComponent* __get_object_as_base(size_t id_t) { \
 	if (__object_list().size() <= id_t) return nullptr; \
 	return dynamic_cast<BaseComponent*>(&__object_list()[id_t]);\
@@ -61,13 +64,17 @@ private: virtual void __remove_component() { \
 public: static CLASS* GetObject(size_t id_t) { \
 	return &__object_list()[id_t]; \
 } \
+ComponentRef<CLASS> GetPermanentReference() { return ComponentRef<CLASS>{ id, type }; }\
 private:\
+
+#define ENABLE_RENDERING(CLASS) private: inline static bool Renderable = Renderer::GetInstance().MakeRenderable<CLASS>();
 
 class GameObject;
 class BaseComponent
 {
 private:
 	friend class GameObject;
+	template <class T>
 	friend class ComponentRef;
 
 	static int componentCount;
@@ -113,7 +120,6 @@ public:
 	bool IsValid() const;
 	GameObject* GetOwner() const { return owner; }
 	ComponentType GetType() const { return type; }
-	ComponentRef GetPermanentReference() { return ComponentRef{ id, type }; }
 
 	// TODO: Will clear the default objects, first add proper garbage collection
 	/*static void ClearDefaultObjects() {

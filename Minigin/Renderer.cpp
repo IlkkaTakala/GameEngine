@@ -40,18 +40,16 @@ void dae::Renderer::Render() const
 	const auto& color = GetBackgroundColor();
 	SDL_SetRenderDrawColor(m_renderer, color.r, color.g, color.b, color.a);
 	SDL_RenderClear(m_renderer);
-	SceneManager::GetInstance().Render();
-
-	for (auto& system : m_renderSystems) {
-		system();
-	}
 
 	ImGui_ImplOpenGL2_NewFrame();
 	ImGui_ImplSDL2_NewFrame(m_window);
 	ImGui::NewFrame();
-	for (auto& system : m_imGuiSystems) {
+
+	SceneManager::GetInstance().Render();
+	for (auto& system : m_renderSystems) {
 		system();
 	}
+
 	ImGui::Render();
 	ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
 	

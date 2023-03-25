@@ -72,7 +72,7 @@ namespace dae
 		void RemoveChild(GameObject* child);
 		void AddChild(GameObject* child);
 
-		std::map<int, ComponentRef> Components;
+		std::map<int, ComponentRef<BaseComponent>> Components;
 
 		Scene* SceneRef;
 		GameObject* Parent{ nullptr };

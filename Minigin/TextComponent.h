@@ -3,6 +3,7 @@
 #include <memory>
 #include "SDL_pixels.h"
 #include "BaseComponent.h"
+#include "Renderer.h"
 
 namespace dae
 {
@@ -10,7 +11,8 @@ namespace dae
 	class Texture2D;
 	class TextComponent final : public BaseComponent
 	{
-		COMPONENT(TextComponent)
+		COMPONENT(TextComponent);
+		ENABLE_RENDERING(TextComponent);
 	public:
 		void Tick(float delta) override;
 
