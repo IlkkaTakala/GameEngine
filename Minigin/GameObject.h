@@ -40,7 +40,6 @@ namespace dae
 				if (type == T::StaticType()) {
 					c.Get()->Destroy();
 					removed = true;
-					Components.erase(type);
 				}
 			}
 			return removed;
@@ -65,6 +64,7 @@ namespace dae
 		void SetParent(GameObject* parent, AttachRules rules = AttachRules());
 		GameObject* GetParent() const { return Parent; }
 		std::list<GameObject*>& GetChildren() { return Children; }
+		Scene* GetScene() const { return SceneRef; }
 
 	private:
 		friend class Scene;

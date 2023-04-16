@@ -11,7 +11,9 @@
 #include "Time.h"
 #include "ResourceManager.h"
 #include "BaseComponent.h"
+#include "EventHandler.h"
 
+#include "steam/steam_api.h"
 
 SDL_Window* g_window{};
 
@@ -103,9 +105,13 @@ void dae::Minigin::Run(const std::function<void()>& load)
 		Time::GetInstance().Update(deltaTime);
 		doContinue = input.ProcessInput();
 		sceneManager.Update(deltaTime);
+		EventHandler::ProcessEvents();
 		renderer.Render();
 
 		GameObject::DeleteMarked();
+		BaseComponent::CleanDestroyed();
+
+		SteamAPI_RunCallbacks();
 
 		auto time = target - chr::duration<double>(chr::high_resolution_clock::now() - currentTime);
 		std::this_thread::sleep_for(time);

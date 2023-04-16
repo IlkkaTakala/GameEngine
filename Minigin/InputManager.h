@@ -11,6 +11,38 @@ namespace dae
 	class InputComponent;
 	typedef unsigned int User;
 
+#pragma region(Constants)
+	namespace Buttons
+	{
+		namespace Controller 
+		{
+			constexpr unsigned short DpadUp			= 0x0001;
+			constexpr unsigned short DpadDown		= 0x0002;
+			constexpr unsigned short DpadLeft		= 0x0004;
+			constexpr unsigned short DpadRight		= 0x0008;
+			constexpr unsigned short Start			= 0x0010;
+			constexpr unsigned short Back			= 0x0020;
+			constexpr unsigned short LeftThumb		= 0x0040;
+			constexpr unsigned short RightThumb		= 0x0080;
+			constexpr unsigned short LeftShoulder	= 0x0100;
+			constexpr unsigned short RightShoulder	= 0x0200;
+			constexpr unsigned short ButtonA		= 0x1000;
+			constexpr unsigned short ButtonB		= 0x2000;
+			constexpr unsigned short ButtonX		= 0x4000;
+			constexpr unsigned short ButtonY		= 0x8000;
+		}
+		namespace Axis
+		{
+			constexpr unsigned short Mouse					= 0x0000;
+			constexpr unsigned short ControllerStickLeft	= 0x0000;
+			constexpr unsigned short ControllerStickRight	= 0x0001;
+		}
+		namespace Keyboard
+		{
+			// TODO: Keyboard codes here
+		}
+	};
+#pragma endregion
 	enum class ButtonState
 	{
 		Pressed,
@@ -79,6 +111,8 @@ namespace dae
 		void SetUserMapping(User user, const std::string& name);
 
 		int ActionToActionID(const std::string& action);
+
+		std::vector<User> GetActiveUsers() const;
 
 		MulticastDelegate<User> OnUserDeviceConnected;
 		MulticastDelegate<User> OnUserDeviceDisconnected;

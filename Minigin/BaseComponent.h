@@ -13,6 +13,8 @@ namespace dae {
 	This does some automated things to make class comparisons possible without casts.
 	Also manages ECS and references, and gives possiblitity to refer to a class by string.
 	Variables and vectors have static lifespan and will be destroyed when the program quits.
+
+	TODO: Use templates instead
 	*/
 #define COMPONENT(CLASS) private: inline static bool registered = init_component<CLASS>(#CLASS);\
 	\
@@ -61,6 +63,15 @@ private: static CLASS* __add_component(CLASS&& c) { \
 private: virtual void __remove_component() { \
 	__free_list().push(id);\
 }\
+protected: virtual void __clean_deleted() {	\
+	for (auto& c : __object_list()) { \
+		if (c.pendingDestroy) { \
+			c.alive = false;\
+			c.pendingDestroy = false;\
+			c.__remove_component();\
+		}\
+	} \
+} \
 public: static CLASS* GetObject(size_t id_t) { \
 	return &__object_list()[id_t]; \
 } \
@@ -79,9 +90,10 @@ private:
 
 	static int componentCount;
 	GameObject* owner{ nullptr };
-	bool alive{ false };
 
 protected:
+	bool alive{ false };
+	bool pendingDestroy{ false };
 	int type{ 0 };
 	size_t id{ 0 };
 
@@ -102,7 +114,7 @@ protected:
 		static std::map<int, BaseComponent*> IdMap;
 		return IdMap;
 	}
-
+	
 	void __set_type(ComponentType t) { type = t; }
 
 	COMPONENT(BaseComponent);
@@ -114,8 +126,16 @@ protected:
 
 
 public:
+	BaseComponent() {}
+	virtual ~BaseComponent() {}
+	BaseComponent(const BaseComponent& other) = delete;
+	BaseComponent(BaseComponent&& other) = default;
+	BaseComponent& operator=(const BaseComponent& other) = delete;
+	BaseComponent& operator=(BaseComponent&& other) = default;
+
 	virtual void Tick(float /*delta*/) {}
 	void Destroy();
+	static void CleanDestroyed();
 
 	bool IsValid() const;
 	GameObject* GetOwner() const { return owner; }

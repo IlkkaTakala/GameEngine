@@ -3,32 +3,42 @@
 #include <list>
 
 namespace dae {
-
+	class GameObject;
 template<typename ...Args>
 class MulticastDelegate
 {
 public:
 	typedef std::function<void(Args...)> DelegateType;
-	typedef const std::list<DelegateType>::const_iterator DelegateHandle;
+	struct DelegateHandle
+	{
+		friend class MulticastDelegate;
+	private:
+		DelegateHandle(typename const std::list<DelegateType>::const_iterator& in_handle) : handle(in_handle), valid(true) { }
+		bool valid{ false };
+		typename const std::list<DelegateType>::const_iterator handle;
+	};
 
-	void Broadcast(Args... vals) {
+	MulticastDelegate() {}
+	MulticastDelegate(const MulticastDelegate& other) = delete;
+	MulticastDelegate(MulticastDelegate&& other) = default;
+	MulticastDelegate& operator=(const MulticastDelegate& other) = delete;
+	MulticastDelegate& operator=(MulticastDelegate&& other) = default;
+
+	void Broadcast(Args... args) {
 		for (auto& c : Callbacks)
-			c(vals...);
+			c(args...);
 	}
 
-	DelegateHandle Bind(const DelegateType& function) {
+	// TODO: Binding should be bound to the lifetime of the given object, now it's up to the user
+	DelegateHandle Bind(GameObject* /*object*/, const DelegateType& function) {
 		Callbacks.emplace_back(function);
-		return --Callbacks.end();
-	}
-
-	DelegateHandle Bind(void* object, void(*function)(Args...)) {
-		DelegateType func = std::bind(function, object, Args...);
-		Callbacks.push_back(func);
-		return --Callbacks.end();
+		return { --Callbacks.end() };
 	}
 
 	void Unbind(DelegateHandle& handle) {
-		Callbacks.remove(handle);
+		if (!handle.valid) return;
+		handle.valid = false;
+		Callbacks.erase(handle.handle);
 	}
 
 	void UnbindAll() {

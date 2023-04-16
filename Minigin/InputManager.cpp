@@ -26,7 +26,7 @@ struct UserDeviceData
 		bool connected;
 	} Controller;
 	
-	InputMappings* Map;
+	InputMappings* Map{ nullptr };
 	std::list<ComponentRef<InputComponent>> InputStack;
 
 	UserDeviceData() {
@@ -41,6 +41,8 @@ struct UserDeviceData
 		Controller.RT = 0.f;
 
 		Controller.connected = true;
+
+		Map = nullptr;
 	}
 };
 
@@ -106,6 +108,7 @@ public:
 			{
 				if (auto it = Users.find(id); it == Users.end()) {
 					Users.emplace(id, UserDeviceData{});
+					if (!AllinputMappings.empty()) Users[id].Map = &AllinputMappings.begin()->second;
 					manager->OnUserDeviceConnected.Broadcast(id);
 				}
 				else {
@@ -120,6 +123,15 @@ public:
 				}
 			}
 		}
+	}
+
+	std::vector<User> GetActiveUsers() const {
+		std::vector<User> users;
+		users.reserve(Users.size());
+		for (auto& [user, data] : Users) {
+			users.push_back(user);
+		}
+		return users;
 	}
 
 	bool ProcessInput() {
@@ -460,4 +472,9 @@ void dae::InputManager::SetUserMapping(User user, const std::string& name)
 int dae::InputManager::ActionToActionID(const std::string& action)
 {
 	return Impl->ActionToActionID(action);
+}
+
+std::vector<User> dae::InputManager::GetActiveUsers() const
+{
+	return Impl->GetActiveUsers();
 }

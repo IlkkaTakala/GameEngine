@@ -111,6 +111,12 @@
     <ClInclude Include="Command.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="EventHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Collider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ResourceManager.cpp">
@@ -198,6 +204,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Command.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="EventHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Collider.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

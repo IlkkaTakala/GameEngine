@@ -35,9 +35,9 @@ void Scene::RemoveAll()
 
 void Scene::Update(float delta)
 {
-	for(auto& object : m_objects)
+	for(size_t i = 0; i < m_objects.size(); i++)
 	{
-		object->Update(delta);
+		m_objects[i]->Update(delta);
 	}
 }
 

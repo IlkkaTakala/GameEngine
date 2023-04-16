@@ -14,6 +14,7 @@ namespace dae {
 		mutable int check{ -1 };
 
 	public:
+		ComponentRef() : ID(0), type(-1) {}
 		ComponentRef(size_t id, ComponentType type) : ID(id), type(type) {}
 		ComponentRef(T* newPtr) : ID(newPtr->id), type(newPtr->type) {
 			ptr = newPtr;
@@ -55,7 +56,7 @@ namespace dae {
 			return lhs == rhs.ptr;
 		}
 
-		T* operator->() {
+		T* operator->() const {
 			return Get();
 		}
 	};

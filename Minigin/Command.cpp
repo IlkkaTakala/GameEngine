@@ -1,9 +1,8 @@
 #include "GameObject.h"
 #include "Command.h"
 
-dae::Command::Command(GameObject* owner)
+dae::Command::Command()
 {
-	Owner = owner;
 }
 
 void dae::Command::internal_execute()

@@ -28,6 +28,7 @@ void dae::GameObject::AddComponent(BaseComponent* Component)
 
 	Component->owner = this;
 	Component->alive = true;
+	Component->pendingDestroy = false;
 	Components.emplace(Component->GetType(), Component->GetPermanentReference());
 }
 
@@ -40,9 +41,11 @@ void dae::GameObject::Destroy()
 {
 	if (MarkedForDelete) return;
 	MarkedForDelete = true;
-	if (SceneRef) SceneRef->Remove(this, false);
 	for (auto it = Children.begin(); it != Children.end(); it = Children.begin()) {
 		(*it)->Destroy();
+	}
+	for (auto& [type, ref] : Components) {
+		ref->Destroy();
 	}
 	
 	if (Parent) Parent->RemoveChild(this);
@@ -63,6 +66,7 @@ void dae::GameObject::DeleteMarked()
 {
 	for (auto& o : ObjectList) {
 		if (o && o->MarkedForDelete) {
+			if (o->SceneRef) o->SceneRef->Remove(o, false);
 			o->Children.clear();
 			delete o;
 			o = nullptr;
@@ -88,6 +92,7 @@ void dae::GameObject::Update(float delta) {
 	for (auto& o : Children) {
 		o->Update(delta);
 	}
+	std::erase_if(Components, [](auto& pair) { return !pair.second->alive; });
 }
 
 void dae::GameObject::SetParent(GameObject* parent, AttachRules rules) {
@@ -95,7 +100,10 @@ void dae::GameObject::SetParent(GameObject* parent, AttachRules rules) {
 	if (Parent) Parent->RemoveChild(this);
 	Parent = parent;
 	
-	if (Parent) Parent->AddChild(this);
+	if (Parent) {
+		SceneRef = Parent->SceneRef;
+		Parent->AddChild(this);
+	}
 	for (auto& [type, c] : Components) {
 		c.Get()->OnTreeChanged(rules);
 	}
@@ -110,5 +118,5 @@ void dae::GameObject::RemoveChild(GameObject* child)
 
 void dae::GameObject::AddChild(GameObject* child) {
 	Children.push_back(child);
-	SceneRef->Remove(child, false);
+	if (SceneRef) SceneRef->Remove(child, false);
 }
