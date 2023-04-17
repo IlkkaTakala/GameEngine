@@ -13,8 +13,6 @@
 #include "BaseComponent.h"
 #include "EventHandler.h"
 
-#include "steam/steam_api.h"
-
 SDL_Window* g_window{};
 
 void PrintSDLVersion()
@@ -110,8 +108,6 @@ void dae::Minigin::Run(const std::function<void()>& load)
 
 		GameObject::DeleteMarked();
 		BaseComponent::CleanDestroyed();
-
-		SteamAPI_RunCallbacks();
 
 		auto time = target - chr::duration<double>(chr::high_resolution_clock::now() - currentTime);
 		std::this_thread::sleep_for(time);
