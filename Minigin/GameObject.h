@@ -5,6 +5,8 @@
 #include <functional>
 #include "ComponentRef.h"
 #include "Scene.h"
+#include "EventHandler.h"
+#include "Delegates.h"
 
 namespace dae
 {
@@ -65,6 +67,9 @@ namespace dae
 		GameObject* GetParent() const { return Parent; }
 		std::list<GameObject*>& GetChildren() { return Children; }
 		Scene* GetScene() const { return SceneRef; }
+
+		void Notify(EventType event, GameObject* sender);
+		MulticastDelegate<Event> OnNotified;
 
 	private:
 		friend class Scene;

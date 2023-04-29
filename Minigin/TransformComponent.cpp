@@ -160,7 +160,7 @@ void dae::TransformComponent::Recalculate()
 	}
 
 	ToParent = glm::translate(glm::mat4(1.0f), Position)
-		* glm::rotate(Rotation, glm::vec3{ 0, 0, 1 })
+		* glm::rotate(glm::radians(Rotation), glm::vec3{ 0, 0, 1 })
 		* glm::scale(glm::mat4(1.0f), Scale);
 
 	ToWorld = ToRoot * ToParent;
@@ -169,7 +169,7 @@ void dae::TransformComponent::Recalculate()
 	glm::vec3 Skew;
 	glm::vec4 Persp;
 	glm::decompose(ToWorld, WorldScale, Rot, WorldPosition, Skew, Persp);
-
+	WorldRotation = glm::degrees(glm::eulerAngles(Rot).z);
 	LocationDirty = false;
 }
 

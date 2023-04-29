@@ -23,3 +23,8 @@ dae::Scene& dae::SceneManager::CreateScene(const std::string& name)
 	m_scenes.push_back(scene);
 	return *scene;
 }
+
+dae::Scene* dae::SceneManager::GetCurrentScene()
+{
+	return m_scenes.empty() ? nullptr : m_scenes.back().get();
+}

@@ -120,3 +120,11 @@ void dae::GameObject::AddChild(GameObject* child) {
 	Children.push_back(child);
 	if (SceneRef) SceneRef->Remove(child, false);
 }
+
+void dae::GameObject::Notify(EventType event, GameObject* sender) 
+{
+	OnNotified.Broadcast({ event, sender });
+	for (auto& c : Components) {
+		c.second->OnNotified({ event, sender });
+	}
+}

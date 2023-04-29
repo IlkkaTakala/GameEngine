@@ -5,7 +5,7 @@
 #include "InputManager.h"
 #include "backends/imgui_impl_sdl2.h"
 #include "InputComponent.h"
-#include "Time.h"
+#include "EngineTime.h"
 
 using namespace dae;
 
@@ -143,7 +143,7 @@ public:
 			if (e.type == SDL_KEYDOWN) {
 				if (Users[0].Map) {
 					for (auto& [action, keys] : Users[0].Map->Keys) {
-						for (auto& key : keys) {
+						for (auto& key : std::get<0>(keys)) {
 							if (key.Trigger == TriggerType::Pressed && key.Type == DeviceType::Keyboard) {
 								if (key.KeyCode == e.key.keysym.sym) {
 									for (auto& in : Users[0].InputStack) {
@@ -158,7 +158,7 @@ public:
 			if (e.type == SDL_KEYUP) {
 				if (Users[0].Map) {
 					for (auto& [action, keys] : Users[0].Map->Keys) {
-						for (auto& key : keys) {
+						for (auto& key : std::get<0>(keys)) {
 							if (key.Trigger == TriggerType::Up && key.Type == DeviceType::Keyboard) {
 								if (key.KeyCode == e.key.keysym.sym) {
 									for (auto& in : Users[0].InputStack) {
@@ -177,7 +177,7 @@ public:
 			for (auto& [action, keys] : Users[0].Map->Keys) {
 				float x = 0.f, y = 0.f;
 				bool hasX = false, hasY = false;
-				for (auto& key : keys) {
+				for (auto& key : std::get<0>(keys)) {
 					if (key.Type == DeviceType::Keyboard) {
 						auto scan = SDL_GetScancodeFromKey(key.KeyCode);
 						switch (key.DataType)
@@ -222,10 +222,12 @@ public:
 						}
 					}
 				}
-				float mag = sqrt(x * x + y * y);
-				if (mag > 1.f) {
-					x /= mag;
-					y /= mag;
+				if (std::get<1>(keys)) {
+					float mag = sqrt(x * x + y * y);
+					if (mag > 1.f) {
+						x /= mag;
+						y /= mag;
+					}
 				}
 				for (auto& in : Users[0].InputStack) {
 					if (hasX && hasY) {
@@ -270,7 +272,7 @@ public:
 			for (auto& [action, keys] : state.Map->Keys) {
 				float x = 0.f, y = 0.f;
 				bool hasX = false, hasY = false;
-				for (auto& k : keys) {
+				for (auto& k : std::get<0>(keys)) {
 					if (k.Type == DeviceType::Controller) {
 						switch (k.DataType)
 						{
@@ -356,11 +358,12 @@ public:
 						}
 					}
 				}
-
-				float mag = sqrt(x * x + y * y);
-				if (mag > 1.f) {
-					x /= mag;
-					y /= mag;
+				if (std::get<1>(keys)) {
+					float mag = sqrt(x * x + y * y);
+					if (mag > 1.f) {
+						x /= mag;
+						y /= mag;
+					}
 				}
 				for (auto& in : state.InputStack) {
 					if (hasX && hasY) {
@@ -390,7 +393,7 @@ public:
 		Users[component->GetCurrentUser()].InputStack.remove(component->GetPermanentReference());
 	}
 
-	void MakeInputMapping(const std::string& name, std::map<std::string, std::vector<Key>>&& data) {
+	void MakeInputMapping(const std::string& name, std::map<std::string, std::tuple<std::vector<Key>, bool>>&& data) {
 		InputMappings map;
 		int count = (int)ActionToID.size();
 		for (auto& [action, keys] : data) {
@@ -459,7 +462,7 @@ float InputManager::GetAxisValue(User /*user*/, unsigned int /*axis*/)
 	return 0.0f;
 }
 
-void dae::InputManager::MakeInputMapping(const std::string& name, std::map<std::string, std::vector<Key>>&& data)
+void dae::InputManager::MakeInputMapping(const std::string& name, std::map<std::string, std::tuple<std::vector<Key>, bool>>&& data)
 {
 	Impl->MakeInputMapping(name, std::move(data));
 }

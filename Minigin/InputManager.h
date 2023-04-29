@@ -89,7 +89,7 @@ namespace dae
 
 	struct InputMappings
 	{
-		std::map<int, std::vector<Key>> Keys;
+		std::map<int, std::tuple<std::vector<Key>, bool>> Keys;
 	};
 
 	class InputManager final : public Singleton<InputManager>
@@ -107,7 +107,7 @@ namespace dae
 		ButtonState GetKeyState(User user, unsigned int key);
 		float GetAxisValue(User user, unsigned int axis);
 
-		void MakeInputMapping(const std::string& name, std::map<std::string, std::vector<Key>>&& data);
+		void MakeInputMapping(const std::string& name, std::map<std::string, std::tuple<std::vector<Key>, bool>>&& data);
 		void SetUserMapping(User user, const std::string& name);
 
 		int ActionToActionID(const std::string& action);
