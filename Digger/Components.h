@@ -177,7 +177,7 @@ public:
 
 private:
 
-	int Index;
+	size_t Index;
 	std::vector<Direction> Path;
 	dae::ComponentRef<GridMoveComponent> Mover;
 };
