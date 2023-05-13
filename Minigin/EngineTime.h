@@ -3,11 +3,13 @@
 #include <functional>
 #include <map>
 #include <queue>
+#include <future>
 
 namespace dae 
 {
 
 	typedef size_t Timer;
+	typedef void* AsyncTimer;
 	typedef std::function<void(void)> TimerCallback;
 
 	struct TimerData
@@ -25,16 +27,25 @@ namespace dae
 		void Update(float delta);
 
 		Timer SetTimerByEvent(float time, const TimerCallback& callback, bool looping = false);
+		AsyncTimer LaunchAsyncTimerByEvent(float time, TimerCallback callback, bool looping = false);
 		float GetRemainingTime(const Timer& handle);
 		float GetElapsedTime(const Timer& handle);
 
 		void ClearTimer(const Timer& handle);
+		void ClearTimer(const AsyncTimer& handle);
 		void ClearAllTimers();
 
 		float GetDelta() { return LastDelta; }
 		float GetTotal() { return TotalTime; }
 
 	private:
+		struct AsyncTimerData {
+			bool close{ false };
+			bool cleared{ false };
+			std::future<void> future;
+		};
+
+		void AsyncFunc(AsyncTimerData* data, const TimerCallback& callback, float duration, bool loop);
 
 		float LastDelta{ 0.f };
 		float TotalTime{ 0.f };
@@ -42,6 +53,7 @@ namespace dae
 		size_t Last{ 0 };
 		std::map<size_t, TimerData> Timers;
 		std::queue<size_t> FreeList;
+		std::list<AsyncTimerData*> Asyncs;
 	};
 
 }

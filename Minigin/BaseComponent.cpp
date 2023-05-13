@@ -5,7 +5,7 @@ int dae::BaseComponent::componentCount = 0;
 
 void dae::BaseComponent::Destroy()
 {
-	OnDestroyed();
+	if (!pendingDestroy) OnDestroyed();
 	pendingDestroy = true;
 }
 

@@ -12,7 +12,6 @@ namespace dae
 	class TextComponent final : public BaseComponent
 	{
 		COMPONENT(TextComponent);
-		ENABLE_RENDERING(TextComponent);
 	public:
 		void Tick(float delta) override;
 

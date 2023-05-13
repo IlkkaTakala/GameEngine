@@ -8,7 +8,6 @@ namespace dae {
 class UIComponent : public BaseComponent
 {
 	COMPONENT(UIComponent);
-	ENABLE_RENDERING(UIComponent);
 
 public:
 

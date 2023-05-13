@@ -13,7 +13,7 @@ public:
 
 	void OnCreated() override;
 
-	void Tick(float delta) override;
+	void ComponentUpdate(float delta) override;
 	void SetRadius(float radius);
 
 	MulticastDelegate<GameObject*, GameObject*> OnCollision;

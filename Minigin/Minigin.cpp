@@ -12,6 +12,8 @@
 #include "ResourceManager.h"
 #include "BaseComponent.h"
 #include "EventHandler.h"
+#include "SystemManager.h"
+#include "SDL_SoundSystem.h"
 
 SDL_Window* g_window{};
 
@@ -66,7 +68,9 @@ dae::Minigin::Minigin(const std::string &dataPath)
 	}
 
 	Renderer::GetInstance().Init(g_window);
+	SystemManager::RegisterSoundSystem(new SDL_SoundSystem());
 
+	SystemManager::GetSoundSystem()->SetDataPath(dataPath);
 	ResourceManager::GetInstance().Init(dataPath);
 }
 
@@ -77,6 +81,8 @@ dae::Minigin::~Minigin()
 	g_window = nullptr;
 	SDL_Quit();
 	GameObject::ForceCleanObjects();
+	Time::GetInstance().ClearAllTimers();
+	SystemManager::RegisterSoundSystem(nullptr);
 }
 
 void dae::Minigin::Run(const std::function<void()>& load)
@@ -104,6 +110,7 @@ void dae::Minigin::Run(const std::function<void()>& load)
 		doContinue = input.ProcessInput();
 		sceneManager.Update(deltaTime);
 		EventHandler::ProcessEvents();
+		BaseComponent::UpdateComponents(deltaTime);
 		renderer.Render();
 
 		GameObject::DeleteMarked();

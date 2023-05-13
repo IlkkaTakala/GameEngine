@@ -75,12 +75,12 @@ void Grid::ClearCell(Direction dir, int x, int y)
 		0,
 		1
 	};
-	int idx = y * Data.cells_x + x;
+	size_t idx = y * Data.cells_x + x;
 	if (idx >= 0 && idx < Cells.size()) {
 		Cells[idx].Cleared = true;
 		if (dir != Direction::None) {
 			glm::ivec2 old = glm::ivec2{ x, y } - Opposites[(int)dir];
-			int prevIdx = old.y * Data.cells_x + old.x;
+			size_t prevIdx = old.y * Data.cells_x + old.x;
 			if (prevIdx >= 0 && prevIdx < Cells.size()) {
 				Cells[prevIdx].Tunnels[(int)dir] = &Cells[idx];
 				Cells[idx].Tunnels[opposite[(int)dir]] = &Cells[prevIdx];
@@ -91,7 +91,7 @@ void Grid::ClearCell(Direction dir, int x, int y)
 
 void Grid::MoveOut(GameObject* o, int x, int y)
 {
-	int idx = y * Data.cells_x + x;
+	size_t idx = y * Data.cells_x + x;
 	if (idx >= 0 && idx < Cells.size()) {
 		std::erase(Cells[idx].Objects, o);
 	}
@@ -99,7 +99,7 @@ void Grid::MoveOut(GameObject* o, int x, int y)
 
 void Grid::MoveInto(GameObject* o, int x, int y)
 {
-	int idx = y * Data.cells_x + x;
+	size_t idx = y * Data.cells_x + x;
 	if (idx >= 0 && idx < Cells.size()) {
 		Cells[idx].Objects.push_back(o);
 	}
@@ -119,7 +119,7 @@ CellData* Grid::GetCellInDirection(Direction dir, int x, int y)
 	x += Opposites[(int)dir].x;
 	if (x < 0 || x >= Data.cells_x) return nullptr;
 	if (y < 0 || y >= Data.cells_y) return nullptr;
-	int idx = y * Data.cells_x + x;
+	size_t idx = y * Data.cells_x + x;
 	if (idx >= 0 && idx < Cells.size()) {
 		return &Cells[idx];
 	}
@@ -133,6 +133,17 @@ void Grid::Eat(Direction dir, int x, int y)
 	SDL_SetTextureBlendMode(EatTexs[(int)dir]->GetSDLTexture(), SDL_BLENDMODE_BLEND);
 	Renderer::GetInstance().RenderTexture(*EatTexs[(int)dir], (float)x - Data.x, (float)y - Data.y, (float)Data.size * 1.1f, (float)Data.size * 1.1f, true);
 	SDL_SetRenderTarget(renderer, NULL);
+}
+
+CellData* Grid::GetCell(int x, int y)
+{
+	if (x < 0 || x >= Data.cells_x) return nullptr;
+	if (y < 0 || y >= Data.cells_y) return nullptr;
+	size_t idx = y * Data.cells_x + x;
+	if (idx >= 0 && idx < Cells.size()) {
+		return &Cells[idx];
+	}
+	return nullptr;
 }
 
 void Grid::EatCell(int x, int y)

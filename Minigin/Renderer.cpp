@@ -46,7 +46,7 @@ void dae::Renderer::Render() const
 	ImGui::NewFrame();
 
 	SceneManager::GetInstance().Render();
-	for (auto& system : m_renderSystems) {
+	for (auto& [prio, system] : m_renderSystems) {
 		system();
 	}
 

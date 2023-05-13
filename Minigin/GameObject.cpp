@@ -87,7 +87,7 @@ void dae::GameObject::Update(float delta) {
 		s(this, delta);
 	}
 	for (auto& [type, c] : Components) {
-		c.Get()->Tick(delta);
+		c.Get()->InternalTick(delta);
 	}
 	for (auto& o : Children) {
 		o->Update(delta);

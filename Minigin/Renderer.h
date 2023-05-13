@@ -2,6 +2,7 @@
 #include <SDL.h>
 #include <functional>
 #include "Singleton.h"
+#include <map>
 
 namespace dae
 {
@@ -15,7 +16,7 @@ namespace dae
 		SDL_Window* m_window{};
 		SDL_Color m_clearColor{};	
 
-		std::vector<std::function<void(void)>> m_renderSystems;
+		std::multimap<int, std::function<void(void)>> m_renderSystems;
 		std::vector<std::function<void(void)>> m_imGuiSystems;
 
 	public:
@@ -30,8 +31,8 @@ namespace dae
 		SDL_Renderer* GetSDLRenderer() const;
 
 		template <class T>
-		bool MakeRenderable() {
-			AddRenderSubsystem([]() {
+		bool MakeRenderable(int prio) {
+			AddRenderSubsystem(prio, []() {
 				for (auto& o : T::__object_list()) {
 					if (o.IsValid())
 						o.Render();
@@ -44,8 +45,8 @@ namespace dae
 		void SetBackgroundColor(const SDL_Color& color) { m_clearColor = color; }
 
 	private:
-		void AddRenderSubsystem(const std::function<void(void)>& system) {
-			m_renderSystems.push_back(system);
+		void AddRenderSubsystem(int prio, const std::function<void(void)>& system) {
+			m_renderSystems.emplace(prio, system);
 		}
 	};
 }

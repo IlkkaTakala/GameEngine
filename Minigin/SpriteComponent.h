@@ -10,7 +10,6 @@ class Texture2D;
 class SpriteComponent : public BaseComponent
 {
 	COMPONENT(SpriteComponent)
-	ENABLE_RENDERING(SpriteComponent);
 public:
 
 	void Render();
@@ -22,7 +21,7 @@ public:
 private:
 
 	std::shared_ptr<Texture2D> m_texture;
-	glm::ivec2 m_size;
+	glm::ivec2 m_size{ 0,0 };
 };
 
 }

@@ -248,8 +248,11 @@ xcopy "$(SolutionDir)Minigin\imgui.ini" "$(OutputPath)" /R /Y</Command>
     <ClInclude Include="ResourceManager.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="SceneManager.h" />
+    <ClInclude Include="SDL_SoundSystem.h" />
     <ClInclude Include="Singleton.h" />
+    <ClInclude Include="SoundManager.h" />
     <ClInclude Include="SpriteComponent.h" />
+    <ClInclude Include="SystemManager.h" />
     <ClInclude Include="TextComponent.h" />
     <ClInclude Include="Texture2D.h" />
     <ClInclude Include="TransformComponent.h" />
@@ -352,7 +355,9 @@ xcopy "$(SolutionDir)Minigin\imgui.ini" "$(OutputPath)" /R /Y</Command>
     <ClCompile Include="ResourceManager.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="SceneManager.cpp" />
+    <ClCompile Include="SDL_SoundSystem.cpp" />
     <ClCompile Include="SpriteComponent.cpp" />
+    <ClCompile Include="SystemManager.cpp" />
     <ClCompile Include="TextComponent.cpp" />
     <ClCompile Include="Texture2D.cpp" />
     <ClCompile Include="Time.cpp" />

@@ -5,7 +5,7 @@ void dae::SphereOverlap::OnCreated()
 {
 }
 
-void dae::SphereOverlap::Tick(float /*delta*/)
+void dae::SphereOverlap::ComponentUpdate(float /*delta*/)
 {
 	if (!IsValid()) return;
 	for (auto& o : __object_list()) {

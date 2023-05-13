@@ -4,6 +4,7 @@
 #include <vector>
 #include <queue>
 
+#include "Renderer.h"
 #include "ComponentRef.h"
 #include "GameObject.h"
 
@@ -90,7 +91,9 @@ public: static CLASS* GetObject(size_t id_t) { \
 dae::ComponentRef<CLASS> GetPermanentReference() { return dae::ComponentRef<CLASS>{ id, type }; }\
 private:\
 
-#define ENABLE_RENDERING(CLASS) private: inline static bool Renderable = dae::Renderer::GetInstance().MakeRenderable<CLASS>();
+//#define ENABLE_RENDERING(CLASS) private: inline static bool Renderable = dae::Renderer::GetInstance().MakeRenderable<CLASS>(1);
+//#define ENABLE_RENDERING_PRIORITY(CLASS, PRIORITY) private: inline static bool Renderable = dae::Renderer::GetInstance().MakeRenderable<CLASS>(PRIORITY);
+#define SET_RENDER_PRIORITY(PRIORITY) public: inline static constexpr int RenderPriority = PRIORITY;
 
 class GameObject;
 class BaseComponent
@@ -102,6 +105,15 @@ private:
 
 	static int componentCount;
 	GameObject* owner{ nullptr };
+
+	void InternalTick(float delta) {
+		if (!pendingDestroy) Tick(delta);
+	}
+
+	static std::map<int, std::function<void(float)>>& GetTicks() {
+		static std::map<int, std::function<void(float)>> Ticks;
+		return Ticks;
+	}
 
 protected:
 	bool alive{ false };
@@ -119,6 +131,27 @@ protected:
 		int type_id = BaseComponent::componentCount++;
 		BaseComponent::__id_map().emplace(name, type_id);
 		BaseComponent::__object_map().emplace(type_id, new T());
+		T::__object_list().reserve(50);
+		if constexpr (!std::is_same_v<decltype(&T::ComponentUpdate), decltype(&BaseComponent::ComponentUpdate)>) {
+			GetTicks().emplace(type_id, [](float delta) {
+				for (auto& c : T::__object_list()) {
+					if (c.alive == true)
+						c.ComponentUpdate(delta);
+				}
+				});
+		}
+		constexpr bool has_render = requires(T & t) {
+			t.Render();
+		};
+		constexpr bool has_prio = requires(T & t) {
+			t.RenderPriority;
+		};
+
+		if constexpr (has_render) {
+			int prio = 1;
+			if constexpr (has_prio) prio = T::RenderPriority;
+			dae::Renderer::GetInstance().MakeRenderable<T>(prio);
+		}
 		return true;
 	}
 
@@ -126,7 +159,7 @@ protected:
 		static std::map<int, BaseComponent*> IdMap;
 		return IdMap;
 	}
-	
+
 	void __set_type(ComponentType t) { type = t; }
 
 	COMPONENT(BaseComponent);
@@ -146,8 +179,14 @@ public:
 	BaseComponent& operator=(BaseComponent&& other) = default;
 
 	virtual void Tick(float /*delta*/) {}
+	virtual void ComponentUpdate(float /*delta*/) {}
 	void Destroy();
 	static void CleanDestroyed();
+	static void UpdateComponents(float delta) {
+		for (auto& [type, t] : GetTicks()) {
+			t(delta);
+		}
+	}
 
 	bool IsValid() const;
 	GameObject* GetOwner() const { return owner; }

@@ -22,7 +22,8 @@ void dae::SpriteComponent::Render()
 void dae::SpriteComponent::SetTexture(const std::string& filename)
 {
 	m_texture = ResourceManager::GetInstance().LoadTexture(filename);
-	SDL_QueryTexture(m_texture->GetSDLTexture(), nullptr, nullptr, &m_size.x, &m_size.y);
+	if (m_size.x == 0 && m_size.y == 0)
+		SDL_QueryTexture(m_texture->GetSDLTexture(), nullptr, nullptr, &m_size.x, &m_size.y);
 	SDL_SetTextureBlendMode(m_texture->GetSDLTexture(), SDL_BLENDMODE_BLEND);
 }
 

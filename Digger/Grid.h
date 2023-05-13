@@ -1,4 +1,6 @@
 #pragma once
+#include "glm/glm.hpp"
+#include "Renderer.h"
 
 struct GridData
 {
@@ -31,11 +33,13 @@ static glm::ivec2 Opposites[] = {
 		{ -1, 0 },
 };
 
-class dae::Texture2D;
+namespace dae {
+	class Texture2D;
+}
 class Grid final : public dae::BaseComponent
 {
-	COMPONENT(Grid);
-	ENABLE_RENDERING(Grid);
+	COMPONENT(Grid); 
+	SET_RENDER_PRIORITY(0)
 public:
 
 	void Render();
@@ -47,6 +51,7 @@ public:
 	void ClearCell(Direction dir, int x, int y);
 	glm::vec3 GetCellCenter(int x, int y);
 	CellData* GetCellInDirection(Direction dir, int x, int y);
+	CellData* GetCell(int x, int y);
 
 	void Eat(Direction dir, int x, int y);
 	void EatCell(int x, int y);
