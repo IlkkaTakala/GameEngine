@@ -10,15 +10,6 @@
 
 namespace dae {
 	
-	/*
-	This does some automated things to make class comparisons possible without casts.
-	Also manages ECS and references, and gives possiblitity to refer to a class by string.
-	Variables and vectors have static lifespan and will be destroyed when the program quits.
-
-	TODO: Use templates instead
-	*/
-
-
 	template <class T>
 	T* CreateComponent(GameObject* Owner = nullptr) {
 		T n{};
@@ -29,70 +20,6 @@ namespace dae {
 		return c_ptr;
 	}
 
-#define COMPONENT(CLASS) private: inline static bool registered = init_component<CLASS>(#CLASS);\
-	\
-	template <class T>\
-	friend T* dae::CreateComponent(dae::GameObject* Owner);\
-public: static dae::ComponentType StaticType() {\
-	static int type_id = BaseComponent::__id_map()[#CLASS];\
-	return type_id; \
-} \
-public: static auto& __object_list() { \
-	static std::vector<CLASS> Objects; \
-	return Objects; \
-} \
-public: static int& __object_list_counter() { \
-	static int Counter; \
-	return Counter; \
-} \
-private: virtual int& __object_list_counter_virtual() { \
-	return __object_list_counter(); \
-} \
-public: virtual dae::BaseComponent* __get_object_as_base(size_t id_t) { \
-	if (__object_list().size() <= id_t) return nullptr; \
-	return dynamic_cast<dae::BaseComponent*>(&__object_list()[id_t]);\
-}\
-private: static auto& __free_list() { \
-	static std::queue<size_t> free; \
-	return free; \
-} \
-private: static CLASS* __add_component(CLASS&& c) { \
-	if (__free_list().empty()) {\
-		c.id = __object_list().size();\
-		if (c.id >= __object_list().capacity()) \
-			__object_list_counter()++; \
-		__object_list().push_back(std::move(c)); \
-		return &*__object_list().rbegin();\
-	}\
-	else \
-	{ \
-		size_t id_t = __free_list().front();\
-		c.id = id_t; \
-		__object_list()[c.id] = std::move(c);\
-		__free_list().pop();\
-		return &__object_list()[id_t]; \
-	} \
-}\
-private: virtual void __remove_component() { \
-	__free_list().push(id);\
-}\
-protected: virtual void __clean_deleted() {	\
-	for (auto& c : __object_list()) { \
-		if (c.pendingDestroy) { \
-			c.alive = false;\
-			c.pendingDestroy = false;\
-			c.__remove_component();\
-		}\
-	} \
-} \
-public: static CLASS* GetObject(size_t id_t) { \
-	return &__object_list()[id_t]; \
-} \
-dae::ComponentRef<CLASS> GetPermanentReference() { return dae::ComponentRef<CLASS>{ id, type }; }\
-private:\
-
-//#define ENABLE_RENDERING(CLASS) private: inline static bool Renderable = dae::Renderer::GetInstance().MakeRenderable<CLASS>(1);
-//#define ENABLE_RENDERING_PRIORITY(CLASS, PRIORITY) private: inline static bool Renderable = dae::Renderer::GetInstance().MakeRenderable<CLASS>(PRIORITY);
 #define SET_RENDER_PRIORITY(PRIORITY) public: inline static constexpr int RenderPriority = PRIORITY;
 
 class GameObject;
@@ -101,19 +28,16 @@ class BaseComponent
 private:
 	friend class GameObject;
 	template <class T>
-	friend class ComponentRef;
+	friend class ComponentRef; 
+	template <class T>
+	friend T* CreateComponent(GameObject* Owner);
 
-	static int componentCount;
 	GameObject* owner{ nullptr };
 
 	void InternalTick(float delta) {
 		if (!pendingDestroy) Tick(delta);
 	}
-
-	static std::map<int, std::function<void(float)>>& GetTicks() {
-		static std::map<int, std::function<void(float)>> Ticks;
-		return Ticks;
-	}
+	void __set_type(ComponentType t) { type = t; }
 
 protected:
 	bool alive{ false };
@@ -121,38 +45,14 @@ protected:
 	int type{ 0 };
 	size_t id{ 0 };
 
-	static auto& __id_map() {
-		static std::map<std::string, int> IdMap;
-		return IdMap;
+	static int next() noexcept {
+		static int componentCounter = 0;
+		return componentCounter++;
 	}
 
-	template <class T>
-	static bool init_component(const char* name) {
-		int type_id = BaseComponent::componentCount++;
-		BaseComponent::__id_map().emplace(name, type_id);
-		BaseComponent::__object_map().emplace(type_id, new T());
-		T::__object_list().reserve(50);
-		if constexpr (!std::is_same_v<decltype(&T::ComponentUpdate), decltype(&BaseComponent::ComponentUpdate)>) {
-			GetTicks().emplace(type_id, [](float delta) {
-				for (auto& c : T::__object_list()) {
-					if (c.alive == true)
-						c.ComponentUpdate(delta);
-				}
-				});
-		}
-		constexpr bool has_render = requires(T & t) {
-			t.Render();
-		};
-		constexpr bool has_prio = requires(T & t) {
-			t.RenderPriority;
-		};
-
-		if constexpr (has_render) {
-			int prio = 1;
-			if constexpr (has_prio) prio = T::RenderPriority;
-			dae::Renderer::GetInstance().MakeRenderable<T>(prio);
-		}
-		return true;
+	static std::map<int, std::function<void(float)>>& GetTicks() {
+		static std::map<int, std::function<void(float)>> Ticks;
+		return Ticks;
 	}
 
 	static auto& __object_map() {
@@ -160,9 +60,9 @@ protected:
 		return IdMap;
 	}
 
-	void __set_type(ComponentType t) { type = t; }
-
-	COMPONENT(BaseComponent);
+	virtual BaseComponent* __get_object_as_base(size_t id_t) = 0;
+	virtual int& ObjectList_counter_virtual() = 0;
+	virtual void __clean_deleted() = 0;
 
 	virtual void OnCreated() {}
 	virtual void OnDestroyed() {}
@@ -191,6 +91,7 @@ public:
 	bool IsValid() const;
 	GameObject* GetOwner() const { return owner; }
 	ComponentType GetType() const { return type; }
+	ComponentRef<BaseComponent> GetPermanentReference() { return ComponentRef<BaseComponent>{ id, type }; }
 
 	// TODO: Will clear the default objects, first add proper garbage collection
 	/*static void ClearDefaultObjects() {
@@ -198,6 +99,135 @@ public:
 			delete ptr;
 		}
 	}*/
+};
+
+template<class T>
+bool GetRegisterStatus() {
+	static bool reg = Component<T>::init_component();
+	return true;
+}
+
+
+/*
+	No more macros.
+	Not complete yet, but works in the same way as the previous macro
+*/
+template <class T>
+class Component : public BaseComponent
+{
+
+private: 
+	template <class T>
+	friend T* CreateComponent(GameObject* Owner);
+	template <class T>
+	friend bool GetRegisterStatus();
+
+	friend class ComponentRef<T>;
+	friend class ComponentRef<BaseComponent>;
+
+protected:
+	explicit Component() {
+
+	}
+public:
+	virtual ~Component() {}
+	Component(const Component& other) = delete;
+	Component(Component&& other) = default;
+	Component& operator=(const Component& other) = delete;
+	Component& operator=(Component&& other) = default;
+public: 
+	static ComponentType StaticType() {
+		static int type_id = BaseComponent::next();
+		return type_id; 
+	} 
+	static auto& ObjectList() { 
+		static std::vector<T> Objects; 
+		return Objects; 
+	} 
+private: 
+	static int& ObjectList_counter() { 
+		static int Counter; 
+		return Counter; 
+	} 
+	virtual BaseComponent* __get_object_as_base(size_t id_t) {
+		if (ObjectList().size() <= id_t) return nullptr;
+		return dynamic_cast<BaseComponent*>(&ObjectList()[id_t]);
+	}
+	virtual int& ObjectList_counter_virtual() { 
+		return ObjectList_counter(); 
+	} 
+	
+	static auto& __free_list() { 
+		static std::queue<size_t> free; 
+		return free; 
+	} 
+
+	static T* __add_component(T&& c) { 
+		if (__free_list().empty()) {
+			c.id = ObjectList().size();
+			if (c.id >= ObjectList().capacity()) 
+				ObjectList_counter()++; 
+			ObjectList().push_back(std::move(c)); 
+			return &*ObjectList().rbegin();
+		}
+		else 
+		{ 
+			size_t id_t = __free_list().front();
+			c.id = id_t; 
+			ObjectList()[c.id] = std::move(c);
+			__free_list().pop();
+			return &ObjectList()[id_t]; 
+		} 
+	}
+
+	void __remove_component() { 
+		__free_list().push(id);
+	}
+
+	static bool init_component() {
+		BaseComponent::__object_map().emplace(T::StaticType(), new T());
+		Component<T>::ObjectList().reserve(50);
+		if constexpr (!std::is_same_v<decltype(&T::ComponentUpdate), decltype(&BaseComponent::ComponentUpdate)>) {
+			GetTicks().emplace(T::StaticType(), [](float delta) {
+				for (auto& c : T::ObjectList()) {
+					if (c.alive == true)
+						c.ComponentUpdate(delta);
+				}
+				});
+		}
+		constexpr bool has_render = requires(T & t) {
+			t.Render();
+		};
+		constexpr bool has_prio = requires(T & t) {
+			t.RenderPriority;
+		};
+
+		if constexpr (has_render) {
+			int prio = 1;
+			if constexpr (has_prio) prio = T::RenderPriority;
+			dae::Renderer::GetInstance().MakeRenderable<T>(prio);
+		}
+		return true;
+	}
+
+	inline static bool Registered = GetRegisterStatus<T>();
+
+	virtual void __clean_deleted() {
+		for (auto& c : ObjectList()) {
+			if (c.pendingDestroy) {
+				c.alive = false;
+				c.pendingDestroy = false;
+				c.__remove_component();
+			}
+		}
+	}
+
+public: 
+	static T* GetObject(size_t id_t) { 
+		return &ObjectList()[id_t]; 
+	} 
+	ComponentRef<T> GetPermanentReference() { return ComponentRef<T>{ id, type }; }
+	ComponentRef<T> Ref() { GetPermanentReference(); }
 };
 
 }

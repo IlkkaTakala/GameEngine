@@ -5,10 +5,8 @@
 
 namespace dae {
 
-class UIComponent : public BaseComponent
+class UIComponent : public Component<UIComponent>
 {
-	COMPONENT(UIComponent);
-
 public:
 
 	void Render();

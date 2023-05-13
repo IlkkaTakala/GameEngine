@@ -36,9 +36,8 @@ static glm::ivec2 Opposites[] = {
 namespace dae {
 	class Texture2D;
 }
-class Grid final : public dae::BaseComponent
+class Grid final : public dae::Component<Grid>
 {
-	COMPONENT(Grid); 
 	SET_RENDER_PRIORITY(0)
 public:
 

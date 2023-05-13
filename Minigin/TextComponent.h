@@ -9,9 +9,8 @@ namespace dae
 {
 	class Font;
 	class Texture2D;
-	class TextComponent final : public BaseComponent
+	class TextComponent final : public Component<TextComponent>
 	{
-		COMPONENT(TextComponent);
 	public:
 		void Tick(float delta) override;
 

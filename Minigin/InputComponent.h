@@ -4,10 +4,8 @@
 
 namespace dae {
 
-class InputComponent : public BaseComponent
+class InputComponent : public Component<InputComponent>
 {
-	COMPONENT(InputComponent)
-
 public:
 
 	void SetUserFocus(User user);

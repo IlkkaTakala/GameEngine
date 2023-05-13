@@ -18,26 +18,26 @@ namespace dae {
 		ComponentRef(size_t id, ComponentType type) : ID(id), type(type) {}
 		ComponentRef(T* newPtr) : ID(newPtr->id), type(newPtr->type) {
 			ptr = newPtr;
-			check = T::__object_list_counter();
+			check = T::ObjectList_counter();
 		}
 
 		ComponentType Type() const { return type; }
 
 		template <class G>
 		G* Get() const {
-			if (G::__object_list_counter() == check) return (G*)ptr;
+			if (G::ObjectList_counter() == check) return (G*)ptr;
 			if (G::StaticType() != type) return nullptr;
 			ptr = (T*)G::GetObject(ID);
-			check = G::__object_list_counter();
+			check = G::ObjectList_counter();
 			return (G*)ptr;
 		}
 
 		T* Get() const 
 		{
 			auto t = BaseComponent::__object_map()[type];
-			if (t->__object_list_counter_virtual() == check) return ptr;
+			if (t->ObjectList_counter_virtual() == check) return ptr;
 			ptr = (T*)t->__get_object_as_base(ID);
-			check = t->__object_list_counter_virtual();
+			check = t->ObjectList_counter_virtual();
 			return ptr;
 		}
 

@@ -314,7 +314,7 @@ void RefreshPath(ComponentRef<Enemy> ref)
 
 void Enemy::Init()
 {
-	auto& obs = PlayerComponent::__object_list();
+	auto& obs = PlayerComponent::ObjectList();
 
 	Player = &obs[rand() % obs.size()];
 	MoveComp = GetOwner()->GetComponent<GridMoveComponent>();

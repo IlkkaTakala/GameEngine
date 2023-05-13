@@ -5,9 +5,8 @@
 namespace dae 
 {
 
-class SphereOverlap : public BaseComponent
+class SphereOverlap : public Component<SphereOverlap>
 {
-	COMPONENT(SphereOverlap)
 
 public:
 

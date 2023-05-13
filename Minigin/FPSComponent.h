@@ -3,9 +3,8 @@
 
 namespace dae {
 
-class FPSComponent : public BaseComponent
+class FPSComponent : public Component<FPSComponent>
 {
-	COMPONENT(FPSComponent)
 
 public:
 

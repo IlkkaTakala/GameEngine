@@ -8,7 +8,7 @@ void dae::SphereOverlap::OnCreated()
 void dae::SphereOverlap::ComponentUpdate(float /*delta*/)
 {
 	if (!IsValid()) return;
-	for (auto& o : __object_list()) {
+	for (auto& o : ObjectList()) {
 		if (!o.IsValid()) continue;
 		if (&o == this) continue;
 		auto t1 = this->GetOwner()->GetComponent<TransformComponent>();

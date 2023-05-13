@@ -31,9 +31,9 @@ namespace dae
 		SDL_Renderer* GetSDLRenderer() const;
 
 		template <class T>
-		bool MakeRenderable(int prio) {
+		constexpr bool MakeRenderable(int prio) {
 			AddRenderSubsystem(prio, []() {
-				for (auto& o : T::__object_list()) {
+				for (auto& o : T::ObjectList()) {
 					if (o.IsValid())
 						o.Render();
 				}

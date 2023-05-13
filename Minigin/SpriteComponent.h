@@ -7,9 +7,8 @@
 namespace dae {
 
 class Texture2D;
-class SpriteComponent : public BaseComponent
+class SpriteComponent : public Component<SpriteComponent>
 {
-	COMPONENT(SpriteComponent)
 public:
 
 	void Render();

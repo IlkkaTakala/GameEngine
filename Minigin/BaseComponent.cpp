@@ -1,8 +1,6 @@
 #include "BaseComponent.h"
 #include "GameObject.h"
 
-int dae::BaseComponent::componentCount = 0;
-
 void dae::BaseComponent::Destroy()
 {
 	if (!pendingDestroy) OnDestroyed();

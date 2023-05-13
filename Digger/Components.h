@@ -14,9 +14,8 @@ namespace dae {
 }
 class Grid;
 
-class GridMoveComponent final : public dae::BaseComponent
+class GridMoveComponent final : public dae::Component<GridMoveComponent>
 {
-	COMPONENT(GridMoveComponent)
 
 public:
 
@@ -66,9 +65,8 @@ private:
 	float maxProgress;
 };
 
-class PlayerComponent final : public dae::BaseComponent
+class PlayerComponent final : public dae::Component<PlayerComponent>
 {
-	COMPONENT(PlayerComponent);
 public:
 
 	void Init(dae::User user) {
@@ -99,9 +97,8 @@ private:
 	int Score{ 0 };
 };
 
-class LifeDisplay final : public dae::BaseComponent
+class LifeDisplay final : public dae::Component<LifeDisplay>
 {
-	COMPONENT(LifeDisplay);
 public:
 
 	void Init(PlayerComponent* user);
@@ -111,9 +108,8 @@ private:
 	int Lives{ 3 };
 };
 
-class ScoreDisplay final : public dae::BaseComponent
+class ScoreDisplay final : public dae::Component<ScoreDisplay>
 {
-	COMPONENT(ScoreDisplay);
 
 private:
 	dae::ComponentRef<dae::TextComponent> Text;
@@ -122,9 +118,8 @@ public:
 	void Init(PlayerComponent* user);
 };
 
-class GoldBag final : public dae::BaseComponent
+class GoldBag final : public dae::Component<GoldBag>
 {
-	COMPONENT(GoldBag)
 
 public:
 	void StartMoving() {
@@ -151,9 +146,8 @@ private:
 	int fallDist{ 0 };
 };
 
-class Enemy final : public dae::BaseComponent
+class Enemy final : public dae::Component<Enemy>
 {
-	COMPONENT(Enemy)
 
 public:
 
@@ -172,9 +166,8 @@ private:
 	dae::Timer PathChecker;
 };
 
-class PathClearer final : public dae::BaseComponent
+class PathClearer final : public dae::Component<PathClearer>
 {
-	COMPONENT(PathClearer);
 	
 public:
 
@@ -189,9 +182,8 @@ private:
 	dae::ComponentRef<GridMoveComponent> Mover;
 };
 
-class EnemySpawner final : public dae::BaseComponent
+class EnemySpawner final : public dae::Component<EnemySpawner>
 {
-	COMPONENT(EnemySpawner)
 
 public:
 

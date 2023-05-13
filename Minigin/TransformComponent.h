@@ -4,9 +4,8 @@
 
 namespace dae
 {
-	class TransformComponent final : public BaseComponent
+	class TransformComponent final : public Component<TransformComponent>
 	{
-		COMPONENT(TransformComponent)
 
 	public:
 		const glm::vec3& GetPosition();
