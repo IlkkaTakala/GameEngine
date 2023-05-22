@@ -1,6 +1,8 @@
 #pragma once
 #include "glm/glm.hpp"
 #include "Renderer.h"
+#include "GameObject.h"
+#include "BaseComponent.h"
 
 struct GridData
 {

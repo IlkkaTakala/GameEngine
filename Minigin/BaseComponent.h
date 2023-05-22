@@ -141,10 +141,15 @@ public:
 		return type_id; 
 	} 
 	static auto& ObjectList() { 
-		static std::vector<T> Objects; 
-		return Objects; 
+		static std::vector<T> Objects;
+		return Objects;
 	} 
+	static T* GetDefault() {
+		static T obj{};
+		return &obj;
+	}
 private: 
+
 	static int& ObjectList_counter() { 
 		static int Counter; 
 		return Counter; 
@@ -185,7 +190,7 @@ private:
 	}
 
 	static bool init_component() {
-		BaseComponent::__object_map().emplace(T::StaticType(), new T());
+		BaseComponent::__object_map().emplace(T::StaticType(), GetDefault());
 		Component<T>::ObjectList().reserve(50);
 		if constexpr (!std::is_same_v<decltype(&T::ComponentUpdate), decltype(&BaseComponent::ComponentUpdate)>) {
 			GetTicks().emplace(T::StaticType(), [](float delta) {

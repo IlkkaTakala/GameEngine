@@ -14,6 +14,7 @@ namespace dae
 
 		void Update(float delta);
 		void Render() const;
+		std::vector<GameObject*> GetAllRootsOfType(const std::string& type);
 
 		~Scene();
 		Scene(const Scene& other) = delete;

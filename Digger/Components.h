@@ -174,6 +174,7 @@ public:
 	void OnCreated() override;
 	void ComponentUpdate(float delta) override;
 	void ClearPath(const std::vector<Direction>& path);
+	auto& GetPath() { return Path; }
 
 private:
 

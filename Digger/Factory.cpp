@@ -10,16 +10,19 @@
 #include "Collider.h"
 #include "EngineTime.h"
 #include "SystemManager.h"
+#include "File.h"
+#include "Data.h"
+
+using namespace dae;
 
 void makeDisplay(PlayerComponent* player, dae::Scene& scene)
 {
-	using namespace dae;
 
-	auto root = new GameObject();
+	auto root = new GameObject("statview");
 	auto trans = CreateComponent<TransformComponent>(root);
 	trans->SetPosition({ 10, 10 + 85 * player->GetID(), 0 });
 
-	auto go1 = new GameObject();
+	auto go1 = new GameObject("lifeview");
 	trans = CreateComponent<TransformComponent>(go1);
 	auto text = CreateComponent<TextComponent>(go1);
 	auto life = CreateComponent<LifeDisplay>(go1);
@@ -28,7 +31,7 @@ void makeDisplay(PlayerComponent* player, dae::Scene& scene)
 	trans->SetLocalPosition({ 100, 0, 0 });
 	go1->SetParent(root);
 
-	auto go2 = new GameObject();
+	auto go2 = new GameObject("scoreview");
 	trans = CreateComponent<TransformComponent>(go2);
 	text = CreateComponent<TextComponent>(go2);
 	auto score = CreateComponent<ScoreDisplay>(go2);
@@ -41,11 +44,10 @@ void makeDisplay(PlayerComponent* player, dae::Scene& scene)
 	scene.Add(root);
 }
 
-void makePlayer(dae::User user, dae::Scene& scene, float speed)
+void makePlayer(dae::User user, dae::Scene& scene, float speed, int x, int y)
 {
-	using namespace dae;
 
-	auto go1 = new GameObject();
+	auto go1 = new GameObject("player");
 	auto player = CreateComponent<PlayerComponent>(go1);
 	auto trans = CreateComponent<TransformComponent>(go1);
 	auto sprite = CreateComponent<SpriteComponent>(go1);
@@ -61,8 +63,6 @@ void makePlayer(dae::User user, dae::Scene& scene, float speed)
 	InputManager::GetInstance().SetUserMapping(user, "Default");
 	auto gridmove = CreateComponent<GridMoveComponent>(go1);
 
-	int x = 1;
-	int y = 1;
 	gridmove->Init(speed, Grid::GetObject(0), x, y);
 	Grid::GetObject(0)->EatCell(x, y);
 	gridmove->OnGridChanged.Bind(go1, [](Grid* grid, Direction dir, int x, int y) {
@@ -124,9 +124,8 @@ void makePlayer(dae::User user, dae::Scene& scene, float speed)
 
 void makeGold(int x, int y)
 {
-	using namespace dae;
 
-	auto go1 = new GameObject();
+	auto go1 = new GameObject("gold");
 	SceneManager::GetInstance().GetCurrentScene()->Add(go1);
 	auto trans = CreateComponent<TransformComponent>(go1);
 	auto sprite = CreateComponent<SpriteComponent>(go1);
@@ -145,9 +144,8 @@ void makeGold(int x, int y)
 
 void makeEnemy(int x, int y)
 {
-	using namespace dae;
 
-	auto go1 = new GameObject();
+	auto go1 = new GameObject("enemy");
 	SceneManager::GetInstance().GetCurrentScene()->Add(go1);
 	/*auto trans = */CreateComponent<TransformComponent>(go1);
 	auto sprite = CreateComponent<SpriteComponent>(go1);
@@ -174,11 +172,9 @@ void makeEnemy(int x, int y)
 	sprite->SetTexture("enemy.tga");
 }
 
-void makeEmerald()
+void makeEmerald(int x, int y)
 {
-	using namespace dae;
-
-	auto go1 = new GameObject();
+	auto go1 = new GameObject("emerald");
 	SceneManager::GetInstance().GetCurrentScene()->Add(go1);
 	auto trans = CreateComponent<TransformComponent>(go1);
 	auto sprite = CreateComponent<SpriteComponent>(go1);
@@ -188,19 +184,18 @@ void makeEmerald()
 		other->Notify(Events::ScoreEmerald, self);
 	});
 	auto g = Grid::GetObject(0);
-	trans->SetPosition(g->GetCellCenter(rand() % (g->Data.cells_x - 1), rand() % (g->Data.cells_y - 1)));
+	trans->SetPosition(g->GetCellCenter(x, y));
 
 	overlap->SetRadius(SpriteSize / 2);
 	sprite->SetTexture("VEMERALD.png");
 	sprite->SetSize(SpriteSize * 0.8f);
 }
 
-void makeGoldBag()
+void makeGoldBag(int x, int y)
 {
-	using namespace dae;
 	auto Scene = SceneManager::GetInstance().GetCurrentScene();
 
-	auto go = new GameObject();
+	auto go = new GameObject("goldbag");
 
 	/*auto trans =*/ CreateComponent<TransformComponent>(go);
 	auto sprite = CreateComponent<SpriteComponent>(go);
@@ -208,7 +203,7 @@ void makeGoldBag()
 	auto grid = CreateComponent<GridMoveComponent>(go);
 	auto bag = CreateComponent<GoldBag>(go);
 	Grid* g = Grid::GetObject(0);
-	grid->Init(150, g, rand() % (g->Data.cells_x - 1), rand() % (g->Data.cells_y / 2));
+	grid->Init(150, g, x, y);
 
 	grid->GetCanMove = [ref = bag->GetPermanentReference()](Grid* g, Direction dir, int x, int y) -> bool {
 		bool Hor = dir == Direction::Left || dir == Direction::Right;
@@ -282,62 +277,139 @@ void makeGoldBag()
 	Scene->Add(go);
 }
 
-void makeClearer()
+void makeClearer(int x, int y, const std::vector<Direction>& path)
 {
-	using namespace dae;
 	auto Scene = SceneManager::GetInstance().GetCurrentScene();
 
-	auto go = new GameObject();
+	auto go = new GameObject("clearer");
 
 	/*auto trans =*/ CreateComponent<TransformComponent>(go);
 	auto grid = CreateComponent<GridMoveComponent>(go);
 	auto clear = CreateComponent<PathClearer>(go);
 	Grid* g = Grid::GetObject(0);
-	grid->Init(600, g, 1, 1);
-	Grid::GetObject(0)->EatCell(1, 1);
+	grid->Init(600, g, x, y);
+	Grid::GetObject(0)->EatCell(x, y);
 	grid->OnGridChanged.Bind(go, [](Grid* grid, Direction dir, int x, int y) {
 		grid->ClearCell(dir, x, y);
 	});
 	grid->OnMoved.Bind(go, [](Grid* grid, Direction dir, int x, int y) {
 		grid->Eat(dir, x, y);
 	});
-	clear->ClearPath({
-		Direction::Right,
-		Direction::Right,
-		Direction::Right,
-		Direction::Right,
-		Direction::Down,
-		Direction::Down,
-		Direction::Down,
-		Direction::Down,
-		Direction::Down,
-		Direction::Right,
-		Direction::Right,
-		Direction::Right,
-		Direction::Up,
-		Direction::Up,
-		Direction::Up,
-		Direction::Up,
-		Direction::Up,
-		Direction::Up,
-		Direction::Right,
-		Direction::Right,
-		Direction::Right,
-		Direction::Right,
-	});
+	clear->ClearPath(path);
+
+	/**/
 
 	Scene->Add(go);
 }
 
 void makeSpawner(int x, int y)
 {
-	using namespace dae;
 	auto Scene = SceneManager::GetInstance().GetCurrentScene();
 
-	auto go = new GameObject();
+	auto go = new GameObject("spawner");
 
 	auto spawn = CreateComponent<EnemySpawner>(go);
 	spawn->StartSpawn(x, y);
 
 	Scene->Add(go);
+}
+
+glm::ivec2 LoadLevel(const std::string& path)
+{
+	File f = File::OpenFile(path);
+	if (!f) return { 0,0 };
+
+	int cx = 0, cy = 0;
+	int Margin = 20;
+	int Width = 840 - Margin * 2;
+	int Height = 480 - Margin * 2;
+	f.Read((char*)&cx, sizeof(int));
+	f.Read((char*)&cy, sizeof(int));
+	GridData data{
+		Margin + (Width % TileSize) / 2, Margin + (Height % TileSize) / 2, cx, cy, TileSize
+	};
+	makeGrid(data);
+	
+	glm::ivec2 ploc{};
+	f.Read((char*)&ploc, sizeof(ploc));
+
+	int eCount = 0;
+	f.Read((char*)&eCount, sizeof(eCount));
+
+	for (int i = 0; i < eCount; ++i) {
+		glm::ivec2 loc;
+		f.Read((char*)&loc, sizeof(loc));
+
+		makeEmerald(loc.x, loc.y);
+	}
+
+	int gCount = 0;
+	f.Read((char*)&gCount, sizeof(gCount));
+
+	for (int i = 0; i < gCount; ++i) {
+		glm::ivec2 loc;
+		f.Read((char*)&loc, sizeof(loc));
+
+		makeGoldBag(loc.x, loc.y);
+	}
+
+	int pCount;
+	std::vector<Direction> pathV;
+	f.Read((char*)&pCount, sizeof(pCount));
+	for (int i = 0; i < pCount; ++i) {
+		int d = 0;
+		f.Read((char*)&d, sizeof(d));
+		pathV.push_back((Direction)d);
+	}
+
+	makeClearer(1, 1, pathV);
+
+	return ploc;
+}
+
+void SaveLevel(const std::string& path)
+{
+	File f = File::CreateFile(path);
+	if (!f) return;
+
+	Grid* g = Grid::GetObject(0);
+	auto Scene = SceneManager::GetInstance().GetCurrentScene();
+
+	f.Write((char*)&g->Data.cells_x, sizeof(int));
+	f.Write((char*)&g->Data.cells_y, sizeof(int));
+	
+	auto ploc = PlayerComponent::GetObject(0)->GetOwner()->GetComponent<GridMoveComponent>()->GetGridLoc();
+	f.Write((char*)&ploc, sizeof(ploc));
+
+	auto e = Scene->GetAllRootsOfType("emerald");
+	int size = (int)e.size();
+	f.Write((char*)&size, sizeof(size));
+
+	for (auto& o : e) {
+		glm::ivec2 loc;
+		auto& pos = o->GetComponent<TransformComponent>()->GetPosition();
+		loc.x = ((int)pos.x - g->Data.x) / g->Data.size;
+		loc.y = ((int)pos.y - g->Data.y) / g->Data.size;
+
+		f.Write((char*)&loc, sizeof(loc));
+	}
+
+	auto goldbag = Scene->GetAllRootsOfType("goldbag");
+	size = (int)goldbag.size();
+	f.Write((char*)&size, sizeof(size));
+
+	for (auto& o : goldbag) {
+		glm::ivec2 loc;
+		loc = o->GetComponent<GridMoveComponent>()->GetGridLoc();
+
+		f.Write((char*)&loc, sizeof(loc));
+	}
+
+	auto& pathc = PathClearer::GetObject(0)->GetPath();
+	size = (int)pathc.size();
+	f.Write((char*)&size, sizeof(size));
+	for (auto& o : pathc) {
+		int d = (int)o;
+		f.Write((char*)&d, sizeof(d));
+	}
 }

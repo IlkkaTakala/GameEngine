@@ -21,7 +21,7 @@ namespace dae
 	public:
 		virtual void Update(float delta);
 
-		GameObject();
+		GameObject(const char* type);
 		virtual ~GameObject();
 		GameObject(const GameObject& other) = delete;
 		GameObject(GameObject&& other) = delete;
@@ -85,5 +85,7 @@ namespace dae
 		std::vector<std::function<void(GameObject*, float)>> TickSystems;
 
 		bool MarkedForDelete{ false };
+
+		size_t Type;
 	};
 }

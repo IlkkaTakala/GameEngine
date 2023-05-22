@@ -271,8 +271,18 @@ void RefreshPath(ComponentRef<Enemy> ref)
 		{0, 1},
 		{-1, 0},
 	};
-
-	auto start = ref->MoveComp->GetGridLoc();
+	{
+		std::scoped_lock lock(*ref->PathLock);
+		ref->Path.clear();
+	}
+	glm::ivec2 start;
+	if (ref->MoveComp->IsInProgress()) {
+		start = ref->MoveComp->GetGridLoc();
+		Vec2& c = dirs[(int)ref->MoveComp->GetDirection()];
+		start.x += c[0];
+		start.y += c[1];
+	}
+	else start = ref->MoveComp->GetGridLoc();
 	glm::ivec2 targetGlm = ref->Player->GetOwner()->GetComponent<GridMoveComponent>()->GetGridLoc();
 	auto gridreal = ref->MoveComp->GetGrid();
 

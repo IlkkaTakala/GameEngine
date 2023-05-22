@@ -49,3 +49,15 @@ void Scene::Render() const
 	}*/
 }
 
+std::vector<GameObject*> dae::Scene::GetAllRootsOfType(const std::string& type)
+{
+	std::vector<GameObject*> vector;
+	size_t hash = std::hash<std::string>{}(type);
+	for (auto& o : m_objects) {
+		if (o->Type == hash) {
+			vector.push_back(o);
+		}
+	}
+	return std::move(vector);
+}
+

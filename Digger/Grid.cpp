@@ -10,7 +10,7 @@ using namespace dae;
 
 ComponentRef<Grid> makeGrid(const GridData& data)
 {
-	auto go = new GameObject();
+	auto go = new GameObject("grid");
 
 	auto grid = CreateComponent<Grid>(go);
 	auto trans = CreateComponent<TransformComponent>(go);

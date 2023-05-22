@@ -8,9 +8,13 @@ namespace dae {
 	static std::list<GameObject*> ObjectList;
 }
 
-dae::GameObject::GameObject()
+dae::GameObject::GameObject(const char* type)
 {
+	SceneRef = nullptr;
 	ObjectList.push_back(this);
+
+	if (type != nullptr) Type = std::hash<std::string>{}(type);
+	else Type = 0;
 }
 
 dae::GameObject::~GameObject()
