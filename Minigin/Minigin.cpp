@@ -14,6 +14,7 @@
 #include "EventHandler.h"
 #include "SystemManager.h"
 #include "SDL_SoundSystem.h"
+#include "GameState.h"
 
 SDL_Window* g_window{};
 
@@ -83,13 +84,14 @@ dae::Minigin::~Minigin()
 	GameObject::ForceCleanObjects();
 	Time::GetInstance().ClearAllTimers();
 	SystemManager::RegisterSoundSystem(nullptr);
+	GameStateManager::GetInstance().ClearStates();
 }
 
-void dae::Minigin::Run(const std::function<void()>& load)
+void dae::Minigin::Run(const std::function<void(GameStateManager*)>& load)
 {
 	namespace chr = std::chrono;
 
-	load();
+	load(&GameStateManager::GetInstance());
 
 	auto& renderer = Renderer::GetInstance();
 	auto& sceneManager = SceneManager::GetInstance();
@@ -108,9 +110,11 @@ void dae::Minigin::Run(const std::function<void()>& load)
 
 		Time::GetInstance().Update(deltaTime);
 		doContinue = input.ProcessInput();
+		GameStateManager::GetInstance().CheckState();
 		sceneManager.Update(deltaTime);
 		EventHandler::ProcessEvents();
 		BaseComponent::UpdateComponents(deltaTime);
+		GameStateManager::GetInstance().UpdateState(deltaTime);
 		renderer.Render();
 
 		GameObject::DeleteMarked();

@@ -24,6 +24,13 @@ dae::Scene& dae::SceneManager::CreateScene(const std::string& name)
 	return *scene;
 }
 
+void dae::SceneManager::RemoveScene(const std::string& name)
+{
+	std::erase_if(m_scenes, [name](auto& s) {
+		return s->GetName() == name;
+	});
+}
+
 dae::Scene* dae::SceneManager::GetCurrentScene()
 {
 	return m_scenes.empty() ? nullptr : m_scenes.back().get();

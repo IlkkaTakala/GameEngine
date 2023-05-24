@@ -165,7 +165,7 @@ private:
 				} break;
 				case SoundEvent::Play: {
 					std::lock_guard<std::mutex> lock(QueueMutex);
-					auto [play, data] = Queue.front();
+					auto& [play, data] = Queue.front();
 					if (LoadedSounds[play].second.Loaded) {
 						Queue.pop();
 						int channel = Mix_PlayChannel(-1, LoadedSounds[play].first, 0);

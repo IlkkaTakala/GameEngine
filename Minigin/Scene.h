@@ -11,6 +11,7 @@ namespace dae
 		void Add(GameObject* object);
 		void Remove(GameObject* object, bool destroy = true);
 		void RemoveAll();
+		std::string GetName() const { return m_name; }
 
 		void Update(float delta);
 		void Render() const;

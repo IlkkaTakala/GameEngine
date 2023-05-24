@@ -101,12 +101,8 @@ public:
 	}*/
 };
 
-template<class T>
-bool GetRegisterStatus() {
-	static bool reg = Component<T>::init_component();
-	return true;
-}
-
+template <class T>
+bool RegisterComponent();
 
 /*
 	No more macros.
@@ -119,8 +115,6 @@ class Component : public BaseComponent
 private: 
 	template <class T>
 	friend T* CreateComponent(GameObject* Owner);
-	template <class T>
-	friend bool GetRegisterStatus();
 
 	friend class ComponentRef<T>;
 	friend class ComponentRef<BaseComponent>;
@@ -189,6 +183,25 @@ private:
 		__free_list().push(id);
 	}
 
+	inline static bool reg = RegisterComponent<T>();
+
+	virtual void __clean_deleted() {
+		for (auto& c : ObjectList()) {
+			if (c.pendingDestroy) {
+				c.alive = false;
+				c.pendingDestroy = false;
+				c.__remove_component();
+			}
+		}
+	}
+
+public: 
+	static T* GetObject(size_t id_t) { 
+		return &ObjectList()[id_t]; 
+	} 
+	ComponentRef<T> GetPermanentReference() { return ComponentRef<T>{ id, type }; }
+	ComponentRef<T> Ref() { GetPermanentReference(); }
+
 	static bool init_component() {
 		BaseComponent::__object_map().emplace(T::StaticType(), GetDefault());
 		Component<T>::ObjectList().reserve(50);
@@ -215,24 +228,13 @@ private:
 		return true;
 	}
 
-	inline static bool Registered = GetRegisterStatus<T>();
-
-	virtual void __clean_deleted() {
-		for (auto& c : ObjectList()) {
-			if (c.pendingDestroy) {
-				c.alive = false;
-				c.pendingDestroy = false;
-				c.__remove_component();
-			}
-		}
-	}
-
-public: 
-	static T* GetObject(size_t id_t) { 
-		return &ObjectList()[id_t]; 
-	} 
-	ComponentRef<T> GetPermanentReference() { return ComponentRef<T>{ id, type }; }
-	ComponentRef<T> Ref() { GetPermanentReference(); }
 };
+
+template <class T>
+bool RegisterComponent()
+{
+	static bool reg = Component<T>::init_component();
+	return true;
+}
 
 }
