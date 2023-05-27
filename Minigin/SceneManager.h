@@ -16,9 +16,12 @@ namespace dae
 		void Update(float delta);
 		void Render();
 		Scene* GetCurrentScene();
+
+		void ClearScenes();
 	private:
 		friend class Singleton<SceneManager>;
 		SceneManager() = default;
 		std::vector<std::shared_ptr<Scene>> m_scenes;
+		std::vector<std::shared_ptr<Scene>> DeleteList;
 	};
 }

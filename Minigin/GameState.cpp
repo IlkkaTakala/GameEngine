@@ -2,7 +2,7 @@
 
 using namespace dae;
 
-void dae::GameStateManager::ClearStates()
+void dae::StateManager::ClearStates()
 {
 	for (auto& [handle, state] : States) {
 		delete state;
@@ -10,7 +10,7 @@ void dae::GameStateManager::ClearStates()
 	States.clear();
 }
 
-void dae::GameStateManager::CheckState()
+void dae::StateManager::CheckState()
 {
 	if (CurrentState == 0) {
 		if (!States.empty()) {
@@ -28,41 +28,46 @@ void dae::GameStateManager::CheckState()
 	}
 }
 
-void dae::GameStateManager::UpdateState(float delta)
+void dae::StateManager::UpdateState(float delta)
 {
 	if (CurrentState == 0) return;
 	States[CurrentState]->Update(delta);
 }
 
-StateHandle dae::GameStateManager::AddState(GameState* state)
+StateHandle dae::StateManager::AddState(GameState* state)
 {
 	StateHandle out = high++;
 	States.emplace(out, state);
 	return out;
 }
 
-bool dae::GameStateManager::RemoveState(StateHandle state)
+bool dae::StateManager::RemoveState(StateHandle state)
 {
 	if (auto it = States.find(state); it != States.end()) delete it->second;
 	return States.erase(state);
 }
 
-StateHandle dae::GameStateManager::GetState(const std::string& name)
+GameState* dae::StateManager::GetState(const std::string& name)
 {
 	for (auto& [handle, state] : States) {
-		if (state->name == name) return handle;
+		if (state->name == name) return state;
 	}
-	return StateHandle();
+	return nullptr;
 }
 
-void dae::GameStateManager::SetState(StateHandle state)
+void dae::StateManager::SetState(StateHandle state)
 {
 	if (auto it = States.find(state); it != States.end()) it->second->Exit();
 	CurrentState = state;
 	States[CurrentState]->Init();
 }
 
-void dae::GameStateManager::AddPath(StateHandle from, StateHandle to, std::function<bool(GameState*)> path)
+dae::StateManager::~StateManager()
+{
+	ClearStates();
+}
+
+void dae::StateManager::AddPath(StateHandle from, StateHandle to, std::function<bool(GameState*)> path)
 {
 	States[from]->Paths.emplace_back(to, path);
 }

@@ -7,7 +7,9 @@ unsigned int Scene::m_idCounter = 0;
 
 Scene::Scene(const std::string& name) : m_name(name) {}
 
-Scene::~Scene() = default;
+Scene::~Scene() {
+
+}
 
 void Scene::Add(GameObject* object)
 {
@@ -30,7 +32,6 @@ void Scene::RemoveAll()
 	for (auto& o : m_objects) {
 		o->Destroy();
 	}
-	m_objects.clear();
 }
 
 void Scene::Update(float delta)

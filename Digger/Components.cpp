@@ -5,13 +5,16 @@
 #include "TransformComponent.h"
 #include "InputComponent.h"
 #include "SpriteComponent.h"
+#include "Collider.h"
 #include "TextComponent.h"
 #include "Texture2D.h"
+#include "GameState.h"
 
 #include "SystemManager.h"
 #include "Components.h"
 #include "Factory.h"
 #include "AstarSolver.h"
+#include "GameState.h"
 
 #include <format>
 #include <list>
@@ -133,6 +136,7 @@ void PlayerComponent::TakeDamage()
 	Lives--;
 	SystemManager::GetSoundSystem()->Play("death.wav");
 	OnDamaged.Broadcast();
+	if (Lives <= 0) EventHandler::FireEvent(Events::PlayerFinalScore, GetOwner());
 	emeraldStreak = 0;
 	Dead = true;
 	GetOwner()->GetComponent<GridMoveComponent>()->SetDirection(Direction::None, true);
@@ -145,13 +149,11 @@ void PlayerComponent::TakeDamage()
 		if (auto it = GetOwner()->GetComponent<dae::InputComponent>(); it != nullptr) {
 			it->SetInputEnabled(true);
 		}
-	GetOwner()->GetComponent<GridMoveComponent>()->SetCell(1, 1);
-	GetOwner()->GetComponent<dae::SpriteComponent>()->SetTexture("digger.tga");
-	Dead = false;
-		});
-
-	if (Lives <= 0) {
-	}
+		GetOwner()->GetComponent<GridMoveComponent>()->SetCell(1, 1);
+		GetOwner()->GetComponent<dae::SpriteComponent>()->SetTexture("digger.tga");
+		Dead = false;
+		EventHandler::FireEvent(Events::PlayerDeath, GetOwner());
+	});
 }
 
 void PlayerComponent::GiveScore(int amount)
@@ -212,16 +214,74 @@ void ScoreDisplay::Init(PlayerComponent* user)
 		});
 }
 
-void GoldBag::StopMoving()
+void GoldBag::ComponentUpdate(float delta)
 {
-	IsMoving = false;
-	if (fallDist >= 2) {
-		GetOwner()->Destroy();
-		auto g = GetOwner()->GetComponent<GridMoveComponent>()->GetGridLoc();
-		makeGold(g.x, g.y);
-		SystemManager::GetSoundSystem()->Play("bag_break.wav");
+	if (bagState) bagState->CheckState();
+
+	auto m = gridmove.Get();
+	if (m) {
+		auto dir = m->GetDirection();
+		if (m->Move(delta)) {
+			pushDir = Direction::None;
+			m->SetDirection(dir);
+		}
 	}
-	fallDist = 0;
+	if (bagState) bagState->UpdateState(delta);
+}
+
+void GoldBag::OnCreated()
+{
+	pushDir = Direction::None;
+	bagState = new StateManager();
+	auto state1 = new State_Still(this);
+	auto state2 = new State_Moving(this);
+	auto state3 = new State_Falling(this);
+	auto state4 = new State_FallingStart(this);
+	auto still = bagState->AddState(state1);
+	auto move  = bagState->AddState(state2);
+	auto fall  = bagState->AddState(state3);
+	auto sfall = bagState->AddState(state4);
+
+	gridmove = GetOwner()->GetComponent<GridMoveComponent>();
+	auto grid = gridmove;
+	bagState->AddPath(still, move, [ref = GetPermanentReference()](GameState*) -> bool {
+		return ref->pushDir != Direction::None;
+	});
+	bagState->AddPath(still, sfall, [grid](GameState*) -> bool {
+		auto Cell = grid->GetGrid()->GetCellInDirection(Direction::Down, grid->GetGridLoc().x, grid->GetGridLoc().y);
+		return Cell->Cleared;
+	});
+	bagState->AddPath(move, still, [ref = GetPermanentReference()](GameState*) -> bool {
+		return ref->pushDir == Direction::None;
+	});
+	bagState->AddPath(move, fall, [state2, grid](GameState*) -> bool {
+		auto Cell = grid->GetGrid()->GetCellInDirection(Direction::Down, grid->GetGridLoc().x, grid->GetGridLoc().y);
+		return Cell->Cleared;
+	});
+	bagState->AddPath(fall, still, [state3](GameState*) -> bool {
+		return state3->fallStopped;
+	});
+	bagState->AddPath(sfall, fall, [state4](GameState*) -> bool {
+		return state4->time <= 0.f;
+	});
+
+}
+
+void GoldBag::OnDestroyFinalize()
+{
+	delete bagState;
+	bagState = nullptr;
+}
+
+bool GoldBag::Push(GridMoveComponent* g, Direction dir)
+{
+	if (gridmove->GetDirection() == Direction::None || gridmove->GetDirection() == dir) {
+		if (gridmove->GetGridLoc() - g->GetGridLoc() == Opposites[(int)dir]) {
+			pushDir = dir;
+			return true;
+		}
+	} 
+	return false;
 }
 
 void Enemy::OnCreated()
@@ -257,6 +317,7 @@ inline Vec2 operator+(const Vec2& lhs, const Vec2& rhs) {
 
 void RefreshPath(ComponentRef<Enemy> ref)
 {
+	if (!ref->IsValid()) return;
 	static std::vector<Direction> actions = {
 		Direction::Up,
 		Direction::Right,
@@ -336,6 +397,14 @@ void Enemy::Init()
 	}, true);
 }
 
+void Enemy::OnNotified(Event e)
+{
+	if (e.type == Events::GoldBagCrush) {
+		EventHandler::FireEvent(Events::ScoreEnemy, nullptr);
+		GetOwner()->Destroy();
+	}
+}
+
 void PathClearer::OnCreated()
 {
 	Mover = GetOwner()->GetComponent<GridMoveComponent>();
@@ -377,4 +446,123 @@ void EnemySpawner::StartSpawn(int x, int y)
 void EnemySpawner::OnDestroyed()
 {
 	Time::GetInstance().ClearTimer(Spawner);
+}
+
+void GoldBag::State_Falling::Init()
+{
+	fallStopped = false;
+	auto grid = bag->gridmove;
+	grid->SetDirection(Direction::Down, true);
+
+	fallHandle = grid->OnGridChanged.Bind(bag->GetOwner(), [this](Grid*, Direction, int, int) {
+		fallDist++;
+	});
+
+	auto overlap = bag->GetOwner()->GetComponent<SphereOverlap>();
+	overlap->OnCollision.Bind(bag->GetOwner(), [](GameObject* self, GameObject* other) {
+		auto o = self->GetComponent<GridMoveComponent>();
+		auto cell = Grid::GetObject(0)->GetCellInDirection(Direction::Down, o->GetGridLoc().x, o->GetGridLoc().y);
+		if (cell) {
+			bool found = false;
+			for (auto& ob : cell->Objects) {
+				if (ob == other) {
+					found = true;
+					break;
+				}
+			}
+			if (found) other->Notify(Events::GoldBagCrush, self);
+		}
+	});
+
+	bag->gridmove->GetCanMove = [this, ref = bag->GetPermanentReference()](Grid* g, Direction dir, int x, int y) -> bool {
+		auto Cell = g->GetCellInDirection(dir, x, y);
+		if (Cell)
+			if (Cell->Cleared) {
+				return true;
+			}
+		fallStopped = true;
+		return false;
+	};
+}
+
+void GoldBag::State_Falling::Exit()
+{
+	auto grid = bag->gridmove;
+	auto overlap = bag->GetOwner()->GetComponent<SphereOverlap>();
+	grid->OnGridChanged.Unbind(fallHandle);
+	overlap->OnCollision.UnbindAll();
+	if (fallDist >= 2) {
+		bag->GetOwner()->Destroy();
+		auto g = bag->gridmove->GetGridLoc();
+		makeGold(g.x, g.y);
+		SystemManager::GetSoundSystem()->Play("bag_break.wav");
+	}
+	fallDist = 0;
+}
+
+void GoldBag::State_Still::Init()
+{
+	auto grid = bag->gridmove;
+	grid->SetDirection(Direction::None, true);
+	grid->GetCanMove = [ref = bag->GetPermanentReference()](Grid* g, Direction dir, int x, int y) -> bool {
+		auto Cell = g->GetCellInDirection(dir, x, y);
+		if (Cell)
+			if (!Cell->Objects.empty()) {
+				if (auto m = Cell->Objects[0]->GetComponent<GridMoveComponent>(); m != nullptr) {
+					return m->GetCanMove(g, dir, m->GetGridLoc().x, m->GetGridLoc().y);
+				}
+			}
+			else return true;
+		return false;
+	};
+}
+
+void GoldBag::State_Still::Exit()
+{
+}
+
+void GoldBag::State_FallingStart::Init()
+{
+	time = 1.f;
+}
+
+void GoldBag::State_FallingStart::Update(float delta)
+{
+	time -= delta;
+	auto trans = bag->GetOwner()->GetComponent<TransformComponent>();
+	trans->SetLocalPosition(trans->GetLocalPosition() + glm::vec3{ sin(time * 5.f) * 3.f, 0, 0 });
+}
+
+void GoldBag::State_FallingStart::Exit()
+{
+}
+
+void GoldBag::State_Moving::Init()
+{
+	auto overlap = bag->GetOwner()->GetComponent<SphereOverlap>();
+	overlap->OnCollision.Bind(bag->GetOwner(), [](GameObject* self, GameObject* other) {
+		auto o = self->GetComponent<GridMoveComponent>();
+		if (other->HasComponent<GoldBag>()) {
+			auto g = other->GetComponent<GoldBag>();
+			g->Push(o, o->GetDirection());
+		}
+	});
+	bag->gridmove->SetDirection(bag->pushDir);
+	bag->gridmove->GetCanMove = [ref = bag->GetPermanentReference()](Grid* g, Direction dir, int x, int y) -> bool {
+		auto Cell = g->GetCellInDirection(dir, x, y);
+		if (Cell)
+			if (!Cell->Objects.empty()) {
+				if (auto m = Cell->Objects[0]->GetComponent<GridMoveComponent>(); m != nullptr) {
+					return m->GetCanMove(g, dir, m->GetGridLoc().x, m->GetGridLoc().y);
+				}
+			}
+			else return true;
+		return false;
+	};
+}
+
+void GoldBag::State_Moving::Exit()
+{
+	auto overlap = bag->GetOwner()->GetComponent<SphereOverlap>();
+	overlap->OnCollision.UnbindAll();
 }

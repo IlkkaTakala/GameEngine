@@ -66,6 +66,7 @@ protected:
 
 	virtual void OnCreated() {}
 	virtual void OnDestroyed() {}
+	virtual void OnDestroyFinalize() {}
 	virtual void OnTreeBeginChange(AttachRules /*rules*/) {}
 	virtual void OnTreeChanged(AttachRules /*rules*/) {}
 	virtual void OnNotified(Event /*event*/) {}
@@ -190,6 +191,7 @@ private:
 			if (c.pendingDestroy) {
 				c.alive = false;
 				c.pendingDestroy = false;
+				c.OnDestroyFinalize();
 				c.__remove_component();
 			}
 		}

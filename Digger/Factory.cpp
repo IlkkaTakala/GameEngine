@@ -105,6 +105,13 @@ void makePlayer(dae::User user, dae::Scene& scene, float speed, int x, int y)
 		}
 		});
 
+	overlap->OnCollision.Bind(go1, [ref = gridmove->GetPermanentReference()](GameObject*, GameObject* other) {
+		if (auto it = other->GetComponent<GoldBag>()) {
+			if (ref->GetDirection() == Direction::Left || ref->GetDirection() == Direction::Right)
+				it->Push(ref.Get(), ref->GetDirection());
+		}
+	});
+
 	input->Bind2DAction("Move", [ref = go1->GetComponent<GridMoveComponent>()->GetPermanentReference()](float x, float y) {
 		auto grid = ref.Get<GridMoveComponent>();
 		float delta = sqrt(y * y + x * x) * Time::GetInstance().GetDelta();
@@ -201,76 +208,15 @@ void makeGoldBag(int x, int y)
 	auto sprite = CreateComponent<SpriteComponent>(go);
 	auto overlap = CreateComponent<SphereOverlap>(go);
 	auto grid = CreateComponent<GridMoveComponent>(go);
-	auto bag = CreateComponent<GoldBag>(go);
 	Grid* g = Grid::GetObject(0);
 	grid->Init(150, g, x, y);
+	/*auto bag =*/ CreateComponent<GoldBag>(go);
 
-	grid->GetCanMove = [ref = bag->GetPermanentReference()](Grid* g, Direction dir, int x, int y) -> bool {
-		bool Hor = dir == Direction::Left || dir == Direction::Right;
-		auto Cell = g->GetCellInDirection(dir, x, y);
-		if (Cell)
-			if (Cell->Cleared && !Hor) {
-				if (ref->CanMove()) {
-					return true;
-				}
-				if (Cell->Objects.empty()) {
-					ref->StartMoving();
-					return true;
-				}
-			}
-			else if (!Cell->Objects.empty() && Hor) {
-				if (auto m = Cell->Objects[0]->GetComponent<GridMoveComponent>(); m != nullptr) {
-					return m->GetCanMove(g, dir, m->GetGridLoc().x, m->GetGridLoc().y);
-				}
-			}
-			else if (Hor) return true;
-		ref->StopMoving();
-		return false;
-	};
-	grid->OnGridChanged.Bind(go, [ref = bag->GetPermanentReference()](Grid*, Direction dir, int, int) {
-		if (dir == Direction::Down) ref->GridUpdated();
-		});
 	grid->OnMoved.Bind(go, [](Grid* grid, Direction dir, int x, int y) {
 		grid->Eat(dir, x, y);
-		});
+	});
 
-	go->AddTickSystem([](GameObject* g, float delta) {
-		auto m = g->GetComponent<GridMoveComponent>();
-	if (m) {
-		Direction ori = m->GetDirection();
-		m->SetDirection(Direction::Down);
-		m->Move(delta);
-		m->SetDirection(ori);
-	}
-		});
-
-	overlap->SetRadius(20.f);
-	overlap->OnCollision.Bind(go, [](GameObject* self, GameObject* other) {
-		auto o = self->GetComponent<GridMoveComponent>();
-	if (self->GetComponent<GoldBag>()->CanCrush()) {
-		auto cell = Grid::GetObject(0)->GetCellInDirection(Direction::Down, o->GetGridLoc().x, o->GetGridLoc().y);
-		if (cell) {
-			bool found = false;
-			for (auto& ob : cell->Objects) {
-				if (ob == other) {
-					found = true;
-					break;
-				}
-			}
-			if (found) other->Notify(Events::GoldBagCrush, self);
-		}
-	}
-	if (other->HasComponent<GridMoveComponent>()) {
-		auto g = other->GetComponent<GridMoveComponent>();
-		if (g->GetDirection() == Direction::Left || g->GetDirection() == Direction::Right) {
-			if (g->GetGridLoc() == (o->GetGridLoc() - Opposites[(int)g->GetDirection()])) {
-				o->SetDirection(g->GetDirection());
-				o->Move(Time::GetInstance().GetDelta());
-			}
-		}
-	}
-		});
-
+	overlap->SetRadius(15.f);
 	sprite->SetTexture("VSBAG.gif");
 	sprite->SetSize(glm::vec3{ SpriteSize });
 

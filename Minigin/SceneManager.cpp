@@ -1,5 +1,6 @@
 #include "SceneManager.h"
 #include "Scene.h"
+#include "EngineTime.h"
 
 void dae::SceneManager::Update(float delta)
 {
@@ -26,12 +27,24 @@ dae::Scene& dae::SceneManager::CreateScene(const std::string& name)
 
 void dae::SceneManager::RemoveScene(const std::string& name)
 {
-	std::erase_if(m_scenes, [name](auto& s) {
-		return s->GetName() == name;
-	});
+	for (auto& s : m_scenes) {
+		if (s->GetName() == name) {
+			Time::GetInstance().ClearAllTimers();
+			s->RemoveAll();
+			DeleteList.push_back(s);
+		}
+	}
 }
 
 dae::Scene* dae::SceneManager::GetCurrentScene()
 {
 	return m_scenes.empty() ? nullptr : m_scenes.back().get();
+}
+
+void dae::SceneManager::ClearScenes()
+{
+	for (auto& s : DeleteList) {
+		std::erase(m_scenes, s);
+	}
+	DeleteList.clear();
 }

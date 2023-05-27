@@ -4,6 +4,7 @@
 #include "Grid.h"
 #include "EngineTime.h"
 #include <mutex>
+#include "GameState.h"
 
 namespace dae {
 	class TextComponent;
@@ -120,30 +121,64 @@ public:
 
 class GoldBag final : public dae::Component<GoldBag>
 {
+	class State_Falling : public dae::GameState
+	{
+	public:
+		void Init() override;
+		void Exit() override;
 
+		State_Falling(GoldBag* b) : dae::GameState("bagfall"), bag(b) {}
+
+		bool fallStopped{false};
+		dae::ComponentRef<GoldBag> bag;
+		int fallDist{0};
+		dae::MulticastDelegate<Grid*, Direction, int, int>::DelegateHandle fallHandle;
+	};
+	class State_Still : public dae::GameState
+	{
+	public:
+		void Init() override;
+		void Exit() override;
+
+		State_Still(GoldBag* b) : dae::GameState("bagstill"), bag(b) {}
+
+		dae::ComponentRef<GoldBag> bag;
+	};
+	class State_FallingStart : public dae::GameState
+	{
+	public:
+		void Init() override;
+		void Update(float) override;
+		void Exit() override;
+
+		State_FallingStart(GoldBag* b) : dae::GameState("bagfallstart"), bag(b) {}
+
+		dae::ComponentRef<GoldBag> bag;
+		float time{ 1.f };
+	};
+	class State_Moving : public dae::GameState
+	{
+	public:
+		void Init() override;
+		void Exit() override;
+
+		State_Moving(GoldBag* b) : dae::GameState("bagmove"), bag(b) {}
+
+		dae::ComponentRef<GoldBag> bag;
+	};
 public:
-	void StartMoving() {
-		IsMoving = true;
-	}
 
-	void StopMoving();
+	void ComponentUpdate(float delta) override;
 
-	void GridUpdated() {
-		fallDist++;
-	}
+	void OnCreated() override;
+	void OnDestroyFinalize() override;
 
-	bool CanCrush() {
-		return IsMoving;
-	}
-
-	bool CanMove() {
-		return IsMoving;
-	}
+	bool Push(GridMoveComponent*, Direction);
 
 private:
-
-	bool IsMoving{ false };
-	int fallDist{ 0 };
+	dae::ComponentRef<GridMoveComponent> gridmove;
+	dae::StateManager* bagState;
+	Direction pushDir;
 };
 
 class Enemy final : public dae::Component<Enemy>
@@ -161,7 +196,7 @@ public:
 	dae::ComponentRef<GridMoveComponent> MoveComp;
 	dae::ComponentRef<PlayerComponent> Player;
 private:
-
+	void OnNotified(dae::Event e) override;
 
 	dae::Timer PathChecker;
 };

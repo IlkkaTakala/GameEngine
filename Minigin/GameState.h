@@ -9,7 +9,7 @@ namespace dae {
 	using StateHandle = size_t;
 	class GameState;
 
-class GameStateManager final : public Singleton<GameStateManager>
+class StateManager final 
 {
 	
 public:
@@ -20,11 +20,13 @@ public:
 
 	StateHandle AddState(GameState*);
 	bool RemoveState(StateHandle state);
-	StateHandle GetState(const std::string& name);
+	GameState* GetState(const std::string& name);
 
 	void AddPath(StateHandle from, StateHandle to, std::function<bool(GameState*)> path);
 
 	void SetState(StateHandle state);
+
+	~StateManager();
 
 private:
 
@@ -43,7 +45,7 @@ public:
 protected:
 	virtual ~GameState() {}
 private:
-	friend class GameStateManager;
+	friend class StateManager;
 	std::string name;
 	std::vector<std::pair<StateHandle, std::function<bool(GameState*)>>> Paths;
 };

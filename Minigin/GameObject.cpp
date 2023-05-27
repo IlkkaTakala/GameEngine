@@ -61,6 +61,8 @@ void dae::GameObject::ForceCleanObjects()
 		o->Destroy();
 	}
 	for (auto& o : ObjectList) {
+		for (auto& c : o->Components)
+			c.second->OnDestroyFinalize();
 		delete o;
 	}
 	ObjectList.clear();

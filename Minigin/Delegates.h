@@ -12,10 +12,11 @@ public:
 	struct DelegateHandle
 	{
 		friend class MulticastDelegate;
+		DelegateHandle() : handle(), valid(false) { }
 	private:
 		DelegateHandle(typename const std::list<DelegateType>::const_iterator& in_handle) : handle(in_handle), valid(true) { }
 		bool valid{ false };
-		typename const std::list<DelegateType>::const_iterator handle;
+		typename std::list<DelegateType>::const_iterator handle;
 	};
 
 	MulticastDelegate() {}

@@ -73,6 +73,8 @@ dae::Minigin::Minigin(const std::string &dataPath)
 
 	SystemManager::GetSoundSystem()->SetDataPath(dataPath);
 	ResourceManager::GetInstance().Init(dataPath);
+
+	GameState = new StateManager();
 }
 
 dae::Minigin::~Minigin()
@@ -84,14 +86,14 @@ dae::Minigin::~Minigin()
 	GameObject::ForceCleanObjects();
 	Time::GetInstance().ClearAllTimers();
 	SystemManager::RegisterSoundSystem(nullptr);
-	GameStateManager::GetInstance().ClearStates();
+	delete GameState;
 }
 
-void dae::Minigin::Run(const std::function<void(GameStateManager*)>& load)
+void dae::Minigin::Run(const std::function<void(StateManager*)>& load)
 {
 	namespace chr = std::chrono;
 
-	load(&GameStateManager::GetInstance());
+	load(GameState);
 
 	auto& renderer = Renderer::GetInstance();
 	auto& sceneManager = SceneManager::GetInstance();
@@ -110,15 +112,16 @@ void dae::Minigin::Run(const std::function<void(GameStateManager*)>& load)
 
 		Time::GetInstance().Update(deltaTime);
 		doContinue = input.ProcessInput();
-		GameStateManager::GetInstance().CheckState();
 		sceneManager.Update(deltaTime);
-		EventHandler::ProcessEvents();
 		BaseComponent::UpdateComponents(deltaTime);
-		GameStateManager::GetInstance().UpdateState(deltaTime);
+		GameState->UpdateState(deltaTime);
+		EventHandler::ProcessEvents();
 		renderer.Render();
 
+		GameState->CheckState();
 		GameObject::DeleteMarked();
 		BaseComponent::CleanDestroyed();
+		SceneManager::GetInstance().ClearScenes();
 
 		auto time = target - chr::duration<double>(chr::high_resolution_clock::now() - currentTime);
 		std::this_thread::sleep_for(time);

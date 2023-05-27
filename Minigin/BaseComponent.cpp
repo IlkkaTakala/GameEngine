@@ -5,6 +5,7 @@ void dae::BaseComponent::Destroy()
 {
 	if (!pendingDestroy) OnDestroyed();
 	pendingDestroy = true;
+	alive = false;
 }
 
 bool dae::BaseComponent::IsValid() const
