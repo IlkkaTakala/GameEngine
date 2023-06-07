@@ -12,6 +12,7 @@
 #include "SystemManager.h"
 #include "File.h"
 #include "Data.h"
+#include "GameGlobals.h"
 
 using namespace dae;
 
@@ -53,7 +54,7 @@ void makePlayer(dae::User user, dae::Scene& scene, float speed, int x, int y)
 	auto sprite = CreateComponent<SpriteComponent>(go1);
 	auto overlap = CreateComponent<SphereOverlap>(go1);
 	auto input = CreateComponent<InputComponent>(go1);
-	player->Init(user);
+	player->Init(user, GameGlobals::GetInstance().GetPlayerName(user));
 
 	overlap->SetRadius(TileSize / 2);
 
@@ -315,7 +316,8 @@ glm::ivec2 LoadLevel(const std::string& path)
 
 void SaveLevel(const std::string& path)
 {
-	File f = File::CreateFile(path);
+	File::CreateFile(path);
+	File f = File::OpenFile(path);
 	if (!f) return;
 
 	Grid* g = Grid::GetObject(0);

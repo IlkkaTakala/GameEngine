@@ -161,7 +161,9 @@
   <ItemGroup>
     <ClCompile Include="Components.cpp" />
     <ClCompile Include="Factory.cpp" />
+    <ClCompile Include="GameGlobals.cpp" />
     <ClCompile Include="Grid.cpp" />
+    <ClCompile Include="Highscores.cpp" />
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -169,7 +171,9 @@
     <ClInclude Include="Components.h" />
     <ClInclude Include="Data.h" />
     <ClInclude Include="Factory.h" />
+    <ClInclude Include="GameGlobals.h" />
     <ClInclude Include="Grid.h" />
+    <ClInclude Include="Highscores.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

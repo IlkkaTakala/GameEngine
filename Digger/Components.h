@@ -70,8 +70,9 @@ class PlayerComponent final : public dae::Component<PlayerComponent>
 {
 public:
 
-	void Init(dae::User user) {
+	void Init(dae::User user, const std::string& name) {
 		UserID = user;
+		Name = name;
 	}
 
 	void TakeDamage();
@@ -80,6 +81,7 @@ public:
 
 	int GetLives() const { return Lives; }
 	int GetScore() const { return Score; }
+	const std::string& GetName() const { return Name; }
 	dae::User GetID() const { return UserID; }
 
 	dae::MulticastDelegate<> OnDeath;
@@ -90,6 +92,7 @@ private:
 	void OnNotified(dae::Event e) override;
 
 	dae::User UserID;
+	std::string Name;
 
 	int emeraldStreak{ 0 };
 

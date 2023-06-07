@@ -10,8 +10,13 @@ File dae::File::OpenFile(const std::string& path)
 	auto p = fs::current_path().append(path);
 	File file;
 	file.stream = new std::fstream();
-	file.stream->open(p, std::fstream::binary | std::fstream::in);
+	file.stream->open(p, std::fstream::binary | std::fstream::in | std::fstream::out);
 	if (file.stream->is_open()) {
+		file.stream->clear();
+		file.stream->seekg(0);
+		file.stream->clear();
+		file.stream->seekp(0);
+		file.stream->clear();
 		return file;
 	}
 	delete file.stream;
@@ -19,23 +24,23 @@ File dae::File::OpenFile(const std::string& path)
 	return File();
 }
 
-File dae::File::CreateFile(const std::string& path)
+bool dae::File::CreateFile(const std::string& path)
 {
 	auto p = fs::current_path().append(path);
-	File file;
-	file.stream = new std::fstream();
-	file.stream->open(p, std::fstream::binary | std::fstream::out | std::fstream::trunc);
-	if (file.stream->is_open()) {
-		return file;
+	std::fstream s(p, std::fstream::binary | std::fstream::out | std::fstream::trunc);
+	if (s.is_open()) {
+		return true;
 	}
-	delete file.stream;
-	file.stream = nullptr;
-	return File();
+	return false;
 }
 
-void dae::File::Write(const char* data, int len)
+void dae::File::Write(const char* data, int len, int pos)
 {
-	if (stream) stream->write(data, len);
+	if (stream) {
+		if (pos >= 0) stream->seekp(pos);
+		stream->clear();
+		stream->write(data, len);
+	}
 }
 
 void dae::File::Read(char* out, int count) {

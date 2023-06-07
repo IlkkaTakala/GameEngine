@@ -249,19 +249,25 @@ void GoldBag::OnCreated()
 	});
 	bagState->AddPath(still, sfall, [grid](GameState*) -> bool {
 		auto Cell = grid->GetGrid()->GetCellInDirection(Direction::Down, grid->GetGridLoc().x, grid->GetGridLoc().y);
-		return Cell->Cleared;
+		auto Cell2 = grid->GetGrid()->GetCell(grid->GetGridLoc().x, grid->GetGridLoc().y);
+		return Cell->Cleared && !Cell2->Cleared;
 	});
-	bagState->AddPath(move, still, [ref = GetPermanentReference()](GameState*) -> bool {
-		return ref->pushDir == Direction::None;
+	bagState->AddPath(still, fall, [grid](GameState*) -> bool {
+		auto Cell = grid->GetGrid()->GetCellInDirection(Direction::Down, grid->GetGridLoc().x, grid->GetGridLoc().y);
+		auto Cell2 = grid->GetGrid()->GetCell(grid->GetGridLoc().x, grid->GetGridLoc().y);
+		return Cell->Cleared && Cell2->Cleared;
 	});
 	bagState->AddPath(move, fall, [state2, grid](GameState*) -> bool {
 		auto Cell = grid->GetGrid()->GetCellInDirection(Direction::Down, grid->GetGridLoc().x, grid->GetGridLoc().y);
 		return Cell->Cleared;
 	});
+	bagState->AddPath(move, still, [ref = GetPermanentReference()](GameState*) -> bool {
+		return ref->pushDir == Direction::None;
+	});
 	bagState->AddPath(fall, still, [state3](GameState*) -> bool {
 		return state3->fallStopped;
 	});
-	bagState->AddPath(sfall, fall, [state4](GameState*) -> bool {
+	bagState->AddPath(sfall, fall, [grid, state4](GameState*) -> bool {
 		return state4->time <= 0.f;
 	});
 
