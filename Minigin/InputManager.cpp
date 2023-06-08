@@ -143,22 +143,23 @@ public:
 			}
 			if (Users[0].Map) {
 				for (auto& [action, keys] : Users[0].Map->Keys) {
+					bool triggered = false;
 					for (auto& key : std::get<0>(keys)) {
 						if (key.Type != DeviceType::Keyboard) continue;
 						if (e.type == SDL_KEYDOWN && key.Trigger == TriggerType::Pressed) {
 							if (key.KeyCode == e.key.keysym.sym) {
-								for (auto& in : Users[0].InputStack) {
-									in->TriggerAction(action);
-								}
+								triggered = true;
 							}
 						}
 						else if (e.type == SDL_KEYUP && key.Trigger == TriggerType::Released) {
 							if (key.KeyCode == e.key.keysym.sym) {
-								for (auto& in : Users[0].InputStack) {
-									in->TriggerAction(action);
-								}
+								triggered = true;
 							}
 						}
+					}
+					if (triggered)
+					for (auto& in : Users[0].InputStack) {
+						in->TriggerAction(action);
 					}
 				}
 			}
