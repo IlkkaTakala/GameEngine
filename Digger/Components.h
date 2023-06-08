@@ -70,14 +70,17 @@ class PlayerComponent final : public dae::Component<PlayerComponent>
 {
 public:
 
-	void Init(dae::User user, const std::string& name) {
+	void Init(dae::User user, const std::string& name, const std::string& sprite) {
 		UserID = user;
 		Name = name;
+		Sprite = sprite;
 	}
 
-	void TakeDamage();
+	bool TakeDamage();
 	bool IsAlive() { return Lives > 0; }
 	void GiveScore(int amount);
+
+	void LevelChanged(int x, int y);
 
 	int GetLives() const { return Lives; }
 	int GetScore() const { return Score; }
@@ -93,6 +96,7 @@ private:
 
 	dae::User UserID;
 	std::string Name;
+	std::string Sprite;
 
 	int emeraldStreak{ 0 };
 
@@ -226,10 +230,11 @@ class EnemySpawner final : public dae::Component<EnemySpawner>
 
 public:
 
-	void StartSpawn(int x, int y);
+	void StartSpawn(int x, int y, int count = 3);
 	void OnDestroyed() override;
 
 private:
 
+	int Count;
 	dae::Timer Spawner;
 };

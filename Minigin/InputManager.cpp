@@ -137,33 +137,25 @@ public:
 	bool ProcessInput() {
 		SDL_Event e;
 		while (SDL_PollEvent(&e)) {
+
 			if (e.type == SDL_QUIT) {
 				return false;
 			}
-			if (e.type == SDL_KEYDOWN) {
-				if (Users[0].Map) {
-					for (auto& [action, keys] : Users[0].Map->Keys) {
-						for (auto& key : std::get<0>(keys)) {
-							if (key.Trigger == TriggerType::Pressed && key.Type == DeviceType::Keyboard) {
-								if (key.KeyCode == e.key.keysym.sym) {
-									for (auto& in : Users[0].InputStack) {
-										in->TriggerAction(action);
-									}
+			if (Users[0].Map) {
+				for (auto& [action, keys] : Users[0].Map->Keys) {
+					for (auto& key : std::get<0>(keys)) {
+						if (key.Type != DeviceType::Keyboard) continue;
+						if (e.type == SDL_KEYDOWN && key.Trigger == TriggerType::Pressed) {
+							if (key.KeyCode == e.key.keysym.sym) {
+								for (auto& in : Users[0].InputStack) {
+									in->TriggerAction(action);
 								}
 							}
 						}
-					}
-				}
-			}
-			if (e.type == SDL_KEYUP) {
-				if (Users[0].Map) {
-					for (auto& [action, keys] : Users[0].Map->Keys) {
-						for (auto& key : std::get<0>(keys)) {
-							if (key.Trigger == TriggerType::Up && key.Type == DeviceType::Keyboard) {
-								if (key.KeyCode == e.key.keysym.sym) {
-									for (auto& in : Users[0].InputStack) {
-										in->TriggerAction(action);
-									}
+						else if (e.type == SDL_KEYUP && key.Trigger == TriggerType::Released) {
+							if (key.KeyCode == e.key.keysym.sym) {
+								for (auto& in : Users[0].InputStack) {
+									in->TriggerAction(action);
 								}
 							}
 						}

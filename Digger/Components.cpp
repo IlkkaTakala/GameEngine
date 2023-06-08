@@ -37,13 +37,12 @@ void GridMoveComponent::ComponentUpdate(float /*delta*/)
 
 void GridMoveComponent::Init(float s, Grid* gridC, int x, int y)
 {
+	gridComponent = gridC;
+	if (!gridC) return;
 	SetSpeed(s);
 	SetDirection(Direction::None);
-	gridComponent = gridC;
 	maxProgress = (float)gridC->Data.size;
-	actual = gridC->GetCellCenter(x, y);
-	grid = glm::ivec2{ x, y };
-	gridC->MoveInto(GetOwner(), x, y);
+	SetCell(x, y);
 }
 
 void GridMoveComponent::SetCell(int x, int y)
@@ -67,6 +66,7 @@ void GridMoveComponent::SetDirection(Direction dir, bool force)
 
 bool GridMoveComponent::Move(float delta)
 {
+	if (!gridComponent.IsValid()) return false;
 	UpdateDirection();
 	if (!target) return true;
 	if (GetCanMove) {
@@ -130,9 +130,9 @@ void GridMoveComponent::UpdateDirection()
 	}
 }
 
-void PlayerComponent::TakeDamage()
+bool PlayerComponent::TakeDamage()
 {
-	if (Dead) return;
+	if (Dead) return false;
 	Lives--;
 	SystemManager::GetSoundSystem()->Play("death.wav");
 	OnDamaged.Broadcast();
@@ -150,10 +150,13 @@ void PlayerComponent::TakeDamage()
 			it->SetInputEnabled(true);
 		}
 		GetOwner()->GetComponent<GridMoveComponent>()->SetCell(1, 1);
-		GetOwner()->GetComponent<dae::SpriteComponent>()->SetTexture("digger.tga");
-		Dead = false;
+		GetOwner()->GetComponent<dae::SpriteComponent>()->SetTexture(Sprite);
+		dae::Time::GetInstance().SetTimerByEvent(0.1f, [this]() {
+			Dead = false;
+			});
 		EventHandler::FireEvent(Events::PlayerDeath, GetOwner());
 	});
+	return true;
 }
 
 void PlayerComponent::GiveScore(int amount)
@@ -162,6 +165,14 @@ void PlayerComponent::GiveScore(int amount)
 	Score += amount;
 	OnScoreGained.Broadcast(Score);
 	EventHandler::FireEvent(Events::PlayerScoreGained, GetOwner());
+}
+
+void PlayerComponent::LevelChanged(int x, int y)
+{
+	GetOwner()->GetComponent<GridMoveComponent>()->Init(150.f, Grid::GetObject(0), x, y);
+	Grid::GetObject(0)->EatCell(x, y);
+	GetOwner()->GetComponent<dae::SpriteComponent>()->SetTexture(Sprite);
+	GetOwner()->GetComponent<dae::TransformComponent>()->SetLocalRotation(0.f);
 }
 
 void PlayerComponent::OnNotified(Event e)
@@ -174,6 +185,7 @@ void PlayerComponent::OnNotified(Event e)
 		break;
 
 	case Events::ScoreEmerald:
+		EventHandler::FireEvent(Events::EmeraldDestroy, e.object);
 		e.object->Destroy();
 		SystemManager::GetSoundSystem()->Play("collect.wav", { 2.f });
 		GiveScore(25);
@@ -255,7 +267,7 @@ void GoldBag::OnCreated()
 	bagState->AddPath(still, fall, [grid](GameState*) -> bool {
 		auto Cell = grid->GetGrid()->GetCellInDirection(Direction::Down, grid->GetGridLoc().x, grid->GetGridLoc().y);
 		auto Cell2 = grid->GetGrid()->GetCell(grid->GetGridLoc().x, grid->GetGridLoc().y);
-		return Cell->Cleared && Cell2->Cleared;
+		return Cell->Cleared && Cell2->Cleared && Cell->Objects.size() == 0;
 	});
 	bagState->AddPath(move, fall, [state2, grid](GameState*) -> bool {
 		auto Cell = grid->GetGrid()->GetCellInDirection(Direction::Down, grid->GetGridLoc().x, grid->GetGridLoc().y);
@@ -297,6 +309,7 @@ void Enemy::OnCreated()
 
 void Enemy::OnDestroyed()
 {
+	EventHandler::FireEvent(Events::EnemyDestroy, GetOwner());
 	Time::GetInstance().ClearTimer(PathChecker);
 	delete PathLock;
 	PathLock = nullptr;
@@ -442,10 +455,15 @@ void PathClearer::ClearPath(const std::vector<Direction>& path)
 	Index = 0;
 }
 
-void EnemySpawner::StartSpawn(int x, int y)
+void EnemySpawner::StartSpawn(int x, int y, int count)
 {
-	Spawner = Time::GetInstance().SetTimerByEvent(2.f, [dx = x, dy = y]() {
+	Count = count;
+	Spawner = Time::GetInstance().SetTimerByEvent(2.f, [dx = x, dy = y, ref = GetPermanentReference()]() {
 		makeEnemy(dx, dy);
+		if (--ref->Count <= 0) {
+			Time::GetInstance().ClearTimer(ref->Spawner);
+			ref->GetOwner()->Destroy();
+		}
 	}, true);
 }
 

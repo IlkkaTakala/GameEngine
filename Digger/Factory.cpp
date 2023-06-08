@@ -45,7 +45,7 @@ void makeDisplay(PlayerComponent* player, dae::Scene& scene)
 	scene.Add(root);
 }
 
-void makePlayer(dae::User user, dae::Scene& scene, float speed, int x, int y)
+GameObject* makePlayer(dae::User user, dae::Scene& scene, float speed, int x, int y)
 {
 
 	auto go1 = new GameObject("player");
@@ -54,18 +54,19 @@ void makePlayer(dae::User user, dae::Scene& scene, float speed, int x, int y)
 	auto sprite = CreateComponent<SpriteComponent>(go1);
 	auto overlap = CreateComponent<SphereOverlap>(go1);
 	auto input = CreateComponent<InputComponent>(go1);
-	player->Init(user, GameGlobals::GetInstance().GetPlayerName(user));
+	const char* spritetxt = user == 0 ? "digger.tga" : "digger2.tga";
+
+	player->Init(user, GameGlobals::GetInstance().GetPlayerName(user), spritetxt);
 
 	overlap->SetRadius(TileSize / 2);
 
-	sprite->SetTexture(user == 0 ? "digger.tga" : "digger2.tga");
+	sprite->SetTexture(spritetxt);
 	sprite->SetSize(glm::vec3{ SpriteSize });
 	input->SetUserFocus(user);
 	InputManager::GetInstance().SetUserMapping(user, "Default");
 	auto gridmove = CreateComponent<GridMoveComponent>(go1);
 
 	gridmove->Init(speed, Grid::GetObject(0), x, y);
-	Grid::GetObject(0)->EatCell(x, y);
 	gridmove->OnGridChanged.Bind(go1, [](Grid* grid, Direction dir, int x, int y) {
 		grid->ClearCell(dir, x, y);
 		});
@@ -124,10 +125,14 @@ void makePlayer(dae::User user, dae::Scene& scene, float speed, int x, int y)
 			else if (!up && x < 0.f) grid->SetDirection(Direction::Left);
 		}
 	});
-
+	input->BindAction("Skip", [ref = go1->GetComponent<GridMoveComponent>()->GetPermanentReference()]() {
+		EventHandler::FireEvent(Events::SkipLevel, nullptr);
+	});
 	makeDisplay(player, scene);
 
 	scene.Add(go1);
+
+	return go1;
 }
 
 void makeGold(int x, int y)
@@ -161,7 +166,7 @@ void makeEnemy(int x, int y)
 	auto enemy = CreateComponent<Enemy>(go1);
 	auto grid = CreateComponent<GridMoveComponent>(go1);
 
-	grid->Init(100.f, Grid::GetObject(0), x, y);
+	grid->Init(50.f, Grid::GetObject(0), x, y);
 	grid->GetCanMove = [](Grid* g, Direction dir, int x, int y) {
 		auto c = g->GetCell(x, y);
 		c->Tunnels[(int)dir];
@@ -169,9 +174,10 @@ void makeEnemy(int x, int y)
 	};
 	overlap->OnCollision.Bind(go1, [](GameObject* self, GameObject* other) {
 		if (other->HasComponent<PlayerComponent>()) {
-			other->GetComponent<PlayerComponent>()->TakeDamage();
-			SystemManager::GetSoundSystem()->Play("bite.wav");
-			self->Destroy();
+			if (other->GetComponent<PlayerComponent>()->TakeDamage()) {
+				SystemManager::GetSoundSystem()->Play("bite.wav");
+				self->Destroy();
+			}
 		}
 	});
 	enemy->Init();
@@ -261,11 +267,12 @@ void makeSpawner(int x, int y)
 	Scene->Add(go);
 }
 
-glm::ivec2 LoadLevel(const std::string& path)
+LevelData LoadLevel(const std::string& path)
 {
 	File f = File::OpenFile(path);
-	if (!f) return { 0,0 };
+	if (!f) return { };
 
+	LevelData Data;
 	int cx = 0, cy = 0;
 	int Margin = 20;
 	int Width = 840 - Margin * 2;
@@ -279,10 +286,11 @@ glm::ivec2 LoadLevel(const std::string& path)
 	
 	glm::ivec2 ploc{};
 	f.Read((char*)&ploc, sizeof(ploc));
+	Data.playerStart = ploc;
 
 	int eCount = 0;
 	f.Read((char*)&eCount, sizeof(eCount));
-
+	Data.emeraldCount = eCount;
 	for (int i = 0; i < eCount; ++i) {
 		glm::ivec2 loc;
 		f.Read((char*)&loc, sizeof(loc));
@@ -311,7 +319,7 @@ glm::ivec2 LoadLevel(const std::string& path)
 
 	makeClearer(1, 1, pathV);
 
-	return ploc;
+	return Data;
 }
 
 void SaveLevel(const std::string& path)

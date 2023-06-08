@@ -1,13 +1,15 @@
 #pragma once
 #include "Singleton.h"
 #include "File.h"
+#include "GameGlobals.h"
 
 struct HallOfFame
 {
 	struct Player {
 		char name[4]{};
 		int score{};
-	} Players[10];
+	};
+	Player Players[3][10];
 };
 
 class Highscores : public dae::Singleton<Highscores>
@@ -20,7 +22,7 @@ public:
 
 	const HallOfFame& GetScores();
 
-	bool TryAddScore(const char* name, int score);
+	bool TryAddScore(const char* name, int score, GameType category);
 
 private:
 

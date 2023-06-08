@@ -8,7 +8,7 @@ namespace dae {
 	template <class T = BaseComponent>
 	class ComponentRef
 	{
-		size_t ID;
+		long long ID;
 		ComponentType type;
 		mutable T* ptr{ nullptr };
 		mutable int check{ -1 };
@@ -16,7 +16,14 @@ namespace dae {
 	public:
 		ComponentRef() : ID(0), type(-1) {}
 		ComponentRef(size_t id, ComponentType type) : ID(id), type(type) {}
-		ComponentRef(T* newPtr) : ID(newPtr->id), type(newPtr->type) {
+		ComponentRef(T* newPtr) {
+			if (newPtr) {
+				ID = newPtr->id;
+				type = newPtr->type;
+			}
+			else 
+				ID = -1;
+
 			ptr = newPtr;
 			check = T::ObjectList_counter();
 		}

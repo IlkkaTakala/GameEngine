@@ -27,17 +27,20 @@ const HallOfFame& Highscores::GetScores()
 	return Scores;
 }
 
-bool Highscores::TryAddScore(const char* name, int score)
+bool Highscores::TryAddScore(const char* name, int score, GameType category)
 {
 	for (int i = 0; i < 10; ++i) {
-		if (Scores.Players[i].score < score) {
+		HallOfFame::Player* data = Scores.Players[(int)category];
+
+		if (data[i].score < score) {
 
 			HallOfFame next;
+			HallOfFame::Player* target = next.Players[(int)category];
 
-			memcpy(&next.Players, &Scores.Players, sizeof(HallOfFame::Player) * 10);
-			memcpy(&next.Players[i + 1], &Scores.Players[i], sizeof(HallOfFame::Player) * (9 - i));
-			memcpy(next.Players[i].name, name, 3);
-			next.Players[i].score = score;
+			memcpy(&target, &data, sizeof(HallOfFame::Player) * 10);
+			memcpy(&target[i + 1], &data[i], sizeof(HallOfFame::Player) * (9 - i));
+			memcpy(target[i].name, name, 3);
+			target[i].score = score;
 			Scores = next;
 
 			Save();

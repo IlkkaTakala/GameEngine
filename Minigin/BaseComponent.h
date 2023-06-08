@@ -199,6 +199,7 @@ private:
 
 public: 
 	static T* GetObject(size_t id_t) { 
+		if (id_t >= ObjectList().size()) return nullptr;
 		return &ObjectList()[id_t]; 
 	} 
 	ComponentRef<T> GetPermanentReference() { return ComponentRef<T>{ id, type }; }

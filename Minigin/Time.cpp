@@ -7,7 +7,12 @@ void dae::Time::Update(float delta)
 	LastDelta = delta;
 	TotalTime += delta;
 
-	std::vector<size_t> RemoveList;
+	std::erase_if(Timers,
+		[this](const std::pair<size_t, TimerData>& item) -> bool {
+			return std::find(RemoveList.begin(), RemoveList.end(), item.first) != RemoveList.end();
+		});
+	for (auto& h : RemoveList) FreeList.push(h);
+	RemoveList.clear();
 	for (auto& [handle, t] : Timers) {
 		t.elapsed += delta;
 		if (t.elapsed >= t.duration) {
@@ -17,14 +22,9 @@ void dae::Time::Update(float delta)
 			}
 			else {
 				RemoveList.push_back(handle);
-				FreeList.push(handle);
 			}
 		}
 	}
-	std::erase_if(Timers,
-		[&RemoveList](const std::pair<size_t, TimerData>& item) -> bool {
-			return std::find(RemoveList.begin(), RemoveList.end(), item.first) != RemoveList.end();
-		});
 
 	for (auto& t : Asyncs) {
 		if (t->cleared) {
@@ -84,8 +84,7 @@ float dae::Time::GetElapsedTime(const Timer& handle)
 
 void dae::Time::ClearTimer(const Timer& handle)
 {
-	Timers.erase(handle);
-	FreeList.push(handle);
+	RemoveList.push_back(handle);
 }
 
 void dae::Time::ClearTimer(const AsyncTimer& handle)

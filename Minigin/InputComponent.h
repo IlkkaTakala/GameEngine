@@ -17,6 +17,7 @@ public:
 	void Bind2DAction(const std::string& action, std::function<void(float, float)> callback);
 
 	User GetCurrentUser() const { return CurrentUser; }
+	void AddUser(User user);
 
 	void TriggerAction(int action);
 	void TriggerAxisAction(int action, float value);

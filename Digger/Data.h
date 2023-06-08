@@ -12,4 +12,9 @@ namespace Events
 	constexpr int ScoreGold = 122;
 	constexpr int ScoreEnemy = 123;
 	constexpr int GoldBagCrush = 102;
+
+	constexpr int EnemyDestroy = 141;
+	constexpr int EmeraldDestroy = 142;
+
+	constexpr int SkipLevel = 161;
 }

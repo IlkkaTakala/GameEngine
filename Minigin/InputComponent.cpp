@@ -41,6 +41,12 @@ void dae::InputComponent::Bind2DAction(const std::string& action, std::function<
 		Actions2D.emplace(ID, callback);
 }
 
+void dae::InputComponent::AddUser(User user)
+{
+	InputManager::GetInstance().RegisterInputComponent(this, user);
+
+}
+
 void dae::InputComponent::TriggerAction(int action)
 {
 	if (!ReceivesInput) return;

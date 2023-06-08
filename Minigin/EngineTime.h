@@ -51,6 +51,7 @@ namespace dae
 		float TotalTime{ 0.f };
 
 		size_t Last{ 0 };
+		std::vector<size_t> RemoveList;
 		std::map<size_t, TimerData> Timers;
 		std::queue<size_t> FreeList;
 		std::list<AsyncTimerData*> Asyncs;
