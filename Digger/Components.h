@@ -80,6 +80,8 @@ public:
 	bool IsAlive() { return Lives > 0; }
 	void GiveScore(int amount);
 
+	bool TryFireball();
+
 	void LevelChanged(int x, int y);
 
 	int GetLives() const { return Lives; }
@@ -100,6 +102,7 @@ private:
 
 	int emeraldStreak{ 0 };
 
+	bool fireBall{ true };
 	bool Dead{ false };
 	int Lives{ 3 };
 	int Score{ 0 };
@@ -123,7 +126,7 @@ private:
 	dae::ComponentRef<dae::TextComponent> Text;
 public:
 
-	void Init(PlayerComponent* user);
+	void Init();
 };
 
 class GoldBag final : public dae::Component<GoldBag>
@@ -180,12 +183,18 @@ public:
 	void OnCreated() override;
 	void OnDestroyFinalize() override;
 
-	bool Push(GridMoveComponent*, Direction);
+	bool Push(GridMoveComponent*, Direction, dae::GameObject* player);
+	bool CanPush() const { return canPush; }
+	void SetCanPush(bool state) { canPush = state; }
+
+	dae::GameObject* GetLastPlayer() const { return pushPlayer; }
 
 private:
 	dae::ComponentRef<GridMoveComponent> gridmove;
+	dae::GameObject* pushPlayer;
 	dae::StateManager* bagState;
 	Direction pushDir;
+	bool canPush;
 };
 
 class Enemy final : public dae::Component<Enemy>
@@ -198,14 +207,24 @@ public:
 	void Tick(float delta) override;
 	void Init();
 
+	void Possess(dae::User user);
+
 	std::mutex* PathLock;
 	std::list<int> Path;
 	dae::ComponentRef<GridMoveComponent> MoveComp;
 	dae::ComponentRef<PlayerComponent> Player;
 private:
 	void OnNotified(dae::Event e) override;
+	void Boost();
 
 	dae::Timer PathChecker;
+	dae::Timer Booster;
+	dae::Timer BoostEnd;
+
+	std::string Sprite;
+	std::string BoostSprite;
+	std::string PlayerSprite;
+	std::string PlayerBoostSprite;
 };
 
 class PathClearer final : public dae::Component<PathClearer>
@@ -215,11 +234,11 @@ public:
 
 	void OnCreated() override;
 	void ComponentUpdate(float delta) override;
-	void ClearPath(const std::vector<Direction>& path);
+	void ClearPath(const std::vector<Direction>& path, int count);
 	auto& GetPath() { return Path; }
 
 private:
-
+	int Count;
 	size_t Index;
 	std::vector<Direction> Path;
 	dae::ComponentRef<GridMoveComponent> Mover;

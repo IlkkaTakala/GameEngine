@@ -18,6 +18,11 @@ SDL_Texture* dae::Texture2D::GetSDLTexture() const
 	return m_texture;
 }
 
+int dae::Texture2D::GetTextureObject() const
+{
+	return 0;
+}
+
 dae::Texture2D::Texture2D(SDL_Texture* texture)
 {
 	m_texture = texture;

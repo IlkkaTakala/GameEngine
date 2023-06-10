@@ -15,6 +15,7 @@
 #include "Factory.h"
 #include "AstarSolver.h"
 #include "GameState.h"
+#include "GameGlobals.h"
 
 #include <format>
 #include <list>
@@ -145,17 +146,23 @@ bool PlayerComponent::TakeDamage()
 		it->SetInputEnabled(false);
 	}
 	GetOwner()->GetComponent<dae::SpriteComponent>()->SetTexture("VGRAVE5.gif");
-	dae::Time::GetInstance().SetTimerByEvent(2.f, [this]() {
-		if (auto it = GetOwner()->GetComponent<dae::InputComponent>(); it != nullptr) {
-			it->SetInputEnabled(true);
-		}
-		GetOwner()->GetComponent<GridMoveComponent>()->SetCell(1, 1);
-		GetOwner()->GetComponent<dae::SpriteComponent>()->SetTexture(Sprite);
-		dae::Time::GetInstance().SetTimerByEvent(0.1f, [this]() {
-			Dead = false;
-			});
-		EventHandler::FireEvent(Events::PlayerDeath, GetOwner());
-	});
+	if (Lives > 0)
+		dae::Time::GetInstance().SetTimerByEvent(2.f, [this]() {
+			if (auto it = GetOwner()->GetComponent<dae::InputComponent>(); it != nullptr) {
+				it->SetInputEnabled(true);
+			}
+			GetOwner()->GetComponent<GridMoveComponent>()->SetCell(1, 1);
+			GetOwner()->GetComponent<dae::SpriteComponent>()->SetTexture(Sprite);
+			dae::Time::GetInstance().SetTimerByEvent(0.1f, [this]() {
+				Dead = false;
+				});
+			EventHandler::FireEvent(Events::PlayerDeath, GetOwner());
+		});
+	else {
+		dae::Time::GetInstance().SetTimerByEvent(2.f, [this]() {
+			EventHandler::FireEvent(Events::PlayerDeath, GetOwner());
+		});
+	}
 	return true;
 }
 
@@ -163,8 +170,24 @@ void PlayerComponent::GiveScore(int amount)
 {
 	if (Dead) return;
 	Score += amount;
+	GameGlobals::GetInstance().AddScore(amount);
 	OnScoreGained.Broadcast(Score);
 	EventHandler::FireEvent(Events::PlayerScoreGained, GetOwner());
+}
+
+bool PlayerComponent::TryFireball()
+{
+	if (fireBall && !Dead) {
+		fireBall = false;
+		GetOwner()->GetComponent<dae::SpriteComponent>()->SetTexture("fire_" + Sprite);
+		Time::GetInstance().SetTimerByEvent(5.f, [this] {
+			GetOwner()->GetComponent<dae::SpriteComponent>()->SetTexture(Sprite);
+			fireBall = true;
+		});
+
+		return true;
+	}
+	return false;
 }
 
 void PlayerComponent::LevelChanged(int x, int y)
@@ -173,6 +196,12 @@ void PlayerComponent::LevelChanged(int x, int y)
 	Grid::GetObject(0)->EatCell(x, y);
 	GetOwner()->GetComponent<dae::SpriteComponent>()->SetTexture(Sprite);
 	GetOwner()->GetComponent<dae::TransformComponent>()->SetLocalRotation(0.f);
+
+	Time::GetInstance().SetTimerByEvent(0.3f, [this] {
+		Dead = false;
+		InputManager::GetInstance().SetUserMapping(UserID, "Default");
+		GetOwner()->SetActive(true);
+	});
 }
 
 void PlayerComponent::OnNotified(Event e)
@@ -201,6 +230,10 @@ void PlayerComponent::OnNotified(Event e)
 		GiveScore(500);
 		break;
 
+	case Events::ScoreEnemy:
+		GiveScore(250);
+		break;
+
 	default:
 		break;
 	}
@@ -216,12 +249,12 @@ void LifeDisplay::Init(PlayerComponent* user)
 		});
 }
 
-void ScoreDisplay::Init(PlayerComponent* user)
+void ScoreDisplay::Init()
 {
 	Text = GetOwner()->GetComponent<TextComponent>();
 	Text->SetText(std::format("{:05}", 0));
 
-	user->OnScoreGained.Bind(GetOwner(), [Text = Text](int score) {
+	GameGlobals::GetInstance().ScoreGained.Bind(GetOwner(), [Text = Text](int score) {
 		Text->SetText(std::format("{:05}", score));
 		});
 }
@@ -262,7 +295,7 @@ void GoldBag::OnCreated()
 	bagState->AddPath(still, sfall, [grid](GameState*) -> bool {
 		auto Cell = grid->GetGrid()->GetCellInDirection(Direction::Down, grid->GetGridLoc().x, grid->GetGridLoc().y);
 		auto Cell2 = grid->GetGrid()->GetCell(grid->GetGridLoc().x, grid->GetGridLoc().y);
-		return Cell->Cleared && !Cell2->Cleared;
+		return Cell->Cleared && !Cell2->Cleared && Cell->Objects.empty();
 	});
 	bagState->AddPath(still, fall, [grid](GameState*) -> bool {
 		auto Cell = grid->GetGrid()->GetCellInDirection(Direction::Down, grid->GetGridLoc().x, grid->GetGridLoc().y);
@@ -273,7 +306,7 @@ void GoldBag::OnCreated()
 		auto Cell = grid->GetGrid()->GetCellInDirection(Direction::Down, grid->GetGridLoc().x, grid->GetGridLoc().y);
 		return Cell->Cleared;
 	});
-	bagState->AddPath(move, still, [ref = GetPermanentReference()](GameState*) -> bool {
+	bagState->AddPath(move, still, [ref = GetPermanentReference(), grid](GameState*) -> bool {
 		return ref->pushDir == Direction::None;
 	});
 	bagState->AddPath(fall, still, [state3](GameState*) -> bool {
@@ -291,11 +324,13 @@ void GoldBag::OnDestroyFinalize()
 	bagState = nullptr;
 }
 
-bool GoldBag::Push(GridMoveComponent* g, Direction dir)
+bool GoldBag::Push(GridMoveComponent* g, Direction dir, GameObject* player)
 {
+	if (!canPush) return false;
 	if (gridmove->GetDirection() == Direction::None || gridmove->GetDirection() == dir) {
 		if (gridmove->GetGridLoc() - g->GetGridLoc() == Opposites[(int)dir]) {
 			pushDir = dir;
+			pushPlayer = player;
 			return true;
 		}
 	} 
@@ -311,12 +346,15 @@ void Enemy::OnDestroyed()
 {
 	EventHandler::FireEvent(Events::EnemyDestroy, GetOwner());
 	Time::GetInstance().ClearTimer(PathChecker);
+	Time::GetInstance().ClearTimer(Booster);
+	Time::GetInstance().ClearTimer(BoostEnd);
 	delete PathLock;
 	PathLock = nullptr;
 }
 
 void Enemy::Tick(float delta)
 {
+	if (GetOwner()->HasComponent<InputComponent>()) return;
 	if (MoveComp->Move(delta)) {
 		if (Path.empty()) return;
 		std::scoped_lock lock(*PathLock);
@@ -366,11 +404,12 @@ void RefreshPath(ComponentRef<Enemy> ref)
 	glm::ivec2 targetGlm = ref->Player->GetOwner()->GetComponent<GridMoveComponent>()->GetGridLoc();
 	auto gridreal = ref->MoveComp->GetGrid();
 
-	auto validPreCheck = [grid = gridreal->GetPermanentReference()](const Vec2& state, const Direction& action) {
+	auto validPreCheck = [grid = gridreal->GetPermanentReference(), ref = ref->MoveComp](const Vec2& state, const Direction& action) {
 		Vec2 newState = state + dirs[(int)action];
-		auto c = grid->GetCell(state[0], state[1]);
+		return ref->GetCanMove(grid.Get(), action, state[0], state[1]);
+		/*auto c = grid->GetCell(state[0], state[1]);
 		c->Tunnels[(int)action];
-		return c && c->Tunnels[(int)action] && c->Tunnels[(int)action]->Cleared;
+		return c && c->Tunnels[(int)action] && c->Tunnels[(int)action]->Cleared;*/
 	};
 
 	auto validPostCheck = [](const Vec2& /*state*/) {
@@ -408,20 +447,78 @@ void Enemy::Init()
 
 	Player = &obs[rand() % obs.size()];
 	MoveComp = GetOwner()->GetComponent<GridMoveComponent>();
+	MoveComp->GetCanMove = [](Grid* g, Direction dir, int x, int y) {
+		auto c = g->GetCell(x, y);
+		c->Tunnels[(int)dir];
+		return c && c->Tunnels[(int)dir] && c->Tunnels[(int)dir]->Cleared;
+	};
 
+	Sprite = "VRHOB2.png";
+	BoostSprite = "VNOB2.png";
+	PlayerSprite = "VPHOB.png";
+	PlayerBoostSprite = "VPNOB.png";
+
+	GetOwner()->GetComponent<SpriteComponent>()->SetTexture(Sprite);
+	
 	PathLock = new std::mutex();
 
 	PathChecker = Time::GetInstance().SetTimerByEvent(1.f, [ref = GetPermanentReference()]() {
 		RefreshPath(ref);
 	}, true);
+
+	Booster = Time::GetInstance().SetTimerByEvent(10.f, [ref = GetPermanentReference()] {
+		ref->Boost();
+	}, true);
+}
+
+void Enemy::Possess(User user)
+{
+	GetOwner()->GetComponent<SpriteComponent>()->SetTexture(PlayerSprite);
+	auto input = CreateComponent<dae::InputComponent>(GetOwner());
+	MoveComp->SetSpeed(100.f);
+	input->SetUserFocus(user);
+	input->Bind2DAction("Move", [ref = MoveComp](float x, float y) {
+		auto grid = ref.Get<GridMoveComponent>();
+		float delta = sqrt(y * y + x * x) * dae::Time::GetInstance().GetDelta();
+		if (grid->Move(delta)) {
+			bool up = abs(x) < abs(y);
+			if (up && y > 0.f) grid->SetDirection(Direction::Up);
+			else if (up && y < 0.f) grid->SetDirection(Direction::Down);
+			else if (!up && x > 0.f) grid->SetDirection(Direction::Right);
+			else if (!up && x < 0.f) grid->SetDirection(Direction::Left);
+		}
+	});
 }
 
 void Enemy::OnNotified(Event e)
 {
 	if (e.type == Events::GoldBagCrush) {
-		EventHandler::FireEvent(Events::ScoreEnemy, nullptr);
+		e.object->Notify(Events::ScoreEnemy, GetOwner());
 		GetOwner()->Destroy();
 	}
+}
+
+void Enemy::Boost()
+{
+	MoveComp->GetCanMove = [](Grid*, Direction, int, int) {
+		return true;
+	};
+	if (GetOwner()->HasComponent<InputComponent>())
+		GetOwner()->GetComponent<SpriteComponent>()->SetTexture(PlayerBoostSprite);
+	else GetOwner()->GetComponent<SpriteComponent>()->SetTexture(BoostSprite);
+
+
+	BoostEnd = Time::GetInstance().SetTimerByEvent(4.f, [ref = MoveComp, ref2 = GetPermanentReference()] {
+		ref->GetCanMove = [](Grid* g, Direction dir, int x, int y) {
+			auto c = g->GetCell(x, y);
+			c->Tunnels[(int)dir];
+			return c && c->Tunnels[(int)dir] && c->Tunnels[(int)dir]->Cleared;
+		};
+		if (ref2->GetOwner()->HasComponent<InputComponent>())
+			ref2->GetOwner()->GetComponent<SpriteComponent>()->SetTexture(ref2->PlayerSprite);
+		else 
+			ref2->GetOwner()->GetComponent<SpriteComponent>()->SetTexture(ref2->Sprite);
+	});
 }
 
 void PathClearer::OnCreated()
@@ -442,15 +539,16 @@ void PathClearer::ComponentUpdate(float delta)
 		if (Index >= Path.size()) {
 			Grid::GetObject(0)->EatCell(loc.x, loc.y);
 			GetOwner()->Destroy();
-			makeSpawner(loc.x, loc.y);
+			makeSpawner(loc.x, loc.y, Count);
 		}
 		else Mover->SetDirection(Path[Index++]);
 		
 	}
 }
 
-void PathClearer::ClearPath(const std::vector<Direction>& path)
+void PathClearer::ClearPath(const std::vector<Direction>& path, int count)
 {
+	Count = count;
 	Path = path;
 	Index = 0;
 }
@@ -459,7 +557,8 @@ void EnemySpawner::StartSpawn(int x, int y, int count)
 {
 	Count = count;
 	Spawner = Time::GetInstance().SetTimerByEvent(2.f, [dx = x, dy = y, ref = GetPermanentReference()]() {
-		makeEnemy(dx, dy);
+		auto en = makeEnemy(dx, dy);
+		EventHandler::FireEvent(Events::EnemySpawn, en);
 		if (--ref->Count <= 0) {
 			Time::GetInstance().ClearTimer(ref->Spawner);
 			ref->GetOwner()->Destroy();
@@ -483,9 +582,10 @@ void GoldBag::State_Falling::Init()
 	});
 
 	auto overlap = bag->GetOwner()->GetComponent<SphereOverlap>();
-	overlap->OnCollision.Bind(bag->GetOwner(), [](GameObject* self, GameObject* other) {
+	overlap->OnCollision.Bind(bag->GetOwner(), [p = bag->pushPlayer](GameObject* self, GameObject* other) {
 		auto o = self->GetComponent<GridMoveComponent>();
 		auto cell = Grid::GetObject(0)->GetCellInDirection(Direction::Down, o->GetGridLoc().x, o->GetGridLoc().y);
+		auto cell2 = Grid::GetObject(0)->GetCell(o->GetGridLoc().x, o->GetGridLoc().y);
 		if (cell) {
 			bool found = false;
 			for (auto& ob : cell->Objects) {
@@ -494,7 +594,14 @@ void GoldBag::State_Falling::Init()
 					break;
 				}
 			}
-			if (found) other->Notify(Events::GoldBagCrush, self);
+			if (!found)
+				for (auto& ob : cell2->Objects) {
+					if (ob == other) {
+						found = true;
+						break;
+					}
+				}
+			if (found) other->Notify(Events::GoldBagCrush, p);
 		}
 	});
 
@@ -526,6 +633,7 @@ void GoldBag::State_Falling::Exit()
 
 void GoldBag::State_Still::Init()
 {
+	bag->SetCanPush(true);
 	auto grid = bag->gridmove;
 	grid->SetDirection(Direction::None, true);
 	grid->GetCanMove = [ref = bag->GetPermanentReference()](Grid* g, Direction dir, int x, int y) -> bool {
@@ -543,6 +651,7 @@ void GoldBag::State_Still::Init()
 
 void GoldBag::State_Still::Exit()
 {
+	bag->SetCanPush(false);
 }
 
 void GoldBag::State_FallingStart::Init()
@@ -564,11 +673,12 @@ void GoldBag::State_FallingStart::Exit()
 void GoldBag::State_Moving::Init()
 {
 	auto overlap = bag->GetOwner()->GetComponent<SphereOverlap>();
-	overlap->OnCollision.Bind(bag->GetOwner(), [](GameObject* self, GameObject* other) {
+	overlap->OnCollision.Bind(bag->GetOwner(), [b = bag](GameObject* self, GameObject* other) {
 		auto o = self->GetComponent<GridMoveComponent>();
 		if (other->HasComponent<GoldBag>()) {
 			auto g = other->GetComponent<GoldBag>();
-			g->Push(o, o->GetDirection());
+			g->Push(o, o->GetDirection(), b->GetLastPlayer());
+			
 		}
 	});
 	bag->gridmove->SetDirection(bag->pushDir);
@@ -577,7 +687,7 @@ void GoldBag::State_Moving::Init()
 		if (Cell)
 			if (!Cell->Objects.empty()) {
 				if (auto m = Cell->Objects[0]->GetComponent<GridMoveComponent>(); m != nullptr) {
-					return m->GetCanMove(g, dir, m->GetGridLoc().x, m->GetGridLoc().y);
+					return m->GetCanMove(g, m->GetDirection() == Direction::None ? dir : m->GetDirection(), m->GetGridLoc().x, m->GetGridLoc().y);
 				}
 			}
 			else return true;

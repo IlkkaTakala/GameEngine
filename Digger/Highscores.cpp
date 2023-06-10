@@ -34,10 +34,10 @@ bool Highscores::TryAddScore(const char* name, int score, GameType category)
 
 		if (data[i].score < score) {
 
-			HallOfFame next;
+			HallOfFame next = Scores;
 			HallOfFame::Player* target = next.Players[(int)category];
 
-			memcpy(&target, &data, sizeof(HallOfFame::Player) * 10);
+			//memcpy(target, data, sizeof(HallOfFame::Player) * 10);
 			memcpy(&target[i + 1], &data[i], sizeof(HallOfFame::Player) * (9 - i));
 			memcpy(target[i].name, name, 3);
 			target[i].score = score;

@@ -81,6 +81,12 @@ void dae::GameObject::DeleteMarked()
 	ObjectList.remove(nullptr);
 }
 
+bool dae::GameObject::IsType(const std::string& type)
+{
+	size_t hash = std::hash<std::string>{}(type);
+	return Type == hash;
+}
+
 bool dae::GameObject::HasComponent(const BaseComponent* component) const
 {
 	auto it = Components.find(component->GetType());
@@ -88,7 +94,7 @@ bool dae::GameObject::HasComponent(const BaseComponent* component) const
 }
 
 void dae::GameObject::Update(float delta) {
-	if (MarkedForDelete) return;
+	if (MarkedForDelete || !isActive) return;
 	for (auto& s : TickSystems) {
 		s(this, delta);
 	}
@@ -133,4 +139,11 @@ void dae::GameObject::Notify(EventType event, GameObject* sender)
 	for (auto& c : Components) {
 		c.second->OnNotified({ event, sender });
 	}
+}
+
+void dae::GameObject::SetActive(bool active)
+{
+	isActive = active;
+	for (auto& c : Children) c->SetActive(active);
+	for (auto& c : Components) c.second->SetActive(active);
 }

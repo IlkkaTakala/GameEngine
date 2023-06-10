@@ -44,6 +44,7 @@ protected:
 	bool pendingDestroy{ false };
 	int type{ 0 };
 	size_t id{ 0 };
+	bool isActive{ true };
 
 	static int next() noexcept {
 		static int componentCounter = 0;
@@ -88,6 +89,9 @@ public:
 			t(delta);
 		}
 	}
+
+	void SetActive(bool active) { isActive = active; }
+	bool IsActive() const { return isActive; }
 
 	bool IsValid() const;
 	GameObject* GetOwner() const { return owner; }
@@ -211,7 +215,7 @@ public:
 		if constexpr (!std::is_same_v<decltype(&T::ComponentUpdate), decltype(&BaseComponent::ComponentUpdate)>) {
 			GetTicks().emplace(T::StaticType(), [](float delta) {
 				for (auto& c : T::ObjectList()) {
-					if (c.alive == true)
+					if (c.alive)
 						c.ComponentUpdate(delta);
 				}
 				});

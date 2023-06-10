@@ -49,7 +49,7 @@ void dae::InputComponent::AddUser(User user)
 
 void dae::InputComponent::TriggerAction(int action)
 {
-	if (!ReceivesInput) return;
+	if (!ReceivesInput || !isActive) return;
 	if (auto it = Actions.find(action); it != Actions.end()) {
 		(*it).second();
 	}
@@ -57,7 +57,7 @@ void dae::InputComponent::TriggerAction(int action)
 
 void dae::InputComponent::Trigger2DAction(int action, float x, float y)
 {
-	if (!ReceivesInput) return;
+	if (!ReceivesInput || !isActive) return;
 	if (auto it = Actions2D.find(action); it != Actions2D.end()) {
 		(*it).second(x, y);
 	}
@@ -65,7 +65,7 @@ void dae::InputComponent::Trigger2DAction(int action, float x, float y)
 
 void dae::InputComponent::TriggerAxisAction(int action, float value)
 {
-	if (!ReceivesInput) return;
+	if (!ReceivesInput || !isActive) return;
 	if (auto it = ActionsAxis.find(action); it != ActionsAxis.end()) {
 		(*it).second(value);
 	}

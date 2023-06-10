@@ -59,6 +59,6 @@ std::vector<GameObject*> dae::Scene::GetAllRootsOfType(const std::string& type)
 			vector.push_back(o);
 		}
 	}
-	return std::move(vector);
+	return vector;
 }
 

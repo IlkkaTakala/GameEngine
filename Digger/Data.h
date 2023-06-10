@@ -17,4 +17,5 @@ namespace Events
 	constexpr int EmeraldDestroy = 142;
 
 	constexpr int SkipLevel = 161;
+	constexpr int EnemySpawn = 162;
 }

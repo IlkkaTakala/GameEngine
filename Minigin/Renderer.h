@@ -3,6 +3,7 @@
 #include <functional>
 #include "Singleton.h"
 #include <map>
+#include "glm/glm.hpp"
 
 namespace dae
 {
@@ -23,6 +24,7 @@ namespace dae
 		void Init(SDL_Window* window);
 		void Render() const;
 		void Destroy();
+		glm::ivec2 GetWindowSize();
 
 		void RenderTexture(const Texture2D& texture, float x, float y, bool center = false, float angle = 0.f, bool flip = false) const;
 		void RenderTexture(const Texture2D& texture, float x, float y, float width, float height, bool center = false, float angle = 0.f, bool flip = false) const;
@@ -34,7 +36,7 @@ namespace dae
 		constexpr bool MakeRenderable(int prio) {
 			AddRenderSubsystem(prio, []() {
 				for (auto& o : T::ObjectList()) {
-					if (o.IsValid())
+					if (o.IsValid() && o.IsActive())
 						o.Render();
 				}
 			});

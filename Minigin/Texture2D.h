@@ -11,6 +11,7 @@ namespace dae
 	{
 	public:
 		SDL_Texture* GetSDLTexture() const;
+		int GetTextureObject() const;
 		explicit Texture2D(SDL_Texture* texture);
 		~Texture2D();
 

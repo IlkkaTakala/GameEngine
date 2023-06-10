@@ -61,6 +61,7 @@ namespace dae
 			return it != Components.end();
 		}
 
+		bool IsType(const std::string& type);
 		bool HasComponent(const BaseComponent* component) const;
 
 		void SetParent(GameObject* parent, AttachRules rules = AttachRules());
@@ -70,6 +71,9 @@ namespace dae
 
 		void Notify(EventType event, GameObject* sender);
 		MulticastDelegate<Event> OnNotified;
+
+		void SetActive(bool active);
+		bool IsActive() const { return isActive; }
 
 	private:
 		friend class Scene;
@@ -85,6 +89,7 @@ namespace dae
 		std::vector<std::function<void(GameObject*, float)>> TickSystems;
 
 		bool MarkedForDelete{ false };
+		bool isActive{ true };
 
 		size_t Type;
 	};

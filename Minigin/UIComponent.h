@@ -7,6 +7,7 @@ namespace dae {
 
 class UIComponent : public Component<UIComponent>
 {
+	SET_RENDER_PRIORITY(2);
 public:
 
 	void Render();

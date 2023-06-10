@@ -21,7 +21,7 @@ void dae::Time::Update(float delta)
 				t.elapsed -= t.duration;
 			}
 			else {
-				RemoveList.push_back(handle);
+				ClearTimer(handle);
 			}
 		}
 	}
@@ -84,7 +84,8 @@ float dae::Time::GetElapsedTime(const Timer& handle)
 
 void dae::Time::ClearTimer(const Timer& handle)
 {
-	RemoveList.push_back(handle);
+	if (std::find(RemoveList.begin(), RemoveList.end(), handle) == RemoveList.end())
+		RemoveList.push_back(handle);
 }
 
 void dae::Time::ClearTimer(const AsyncTimer& handle)

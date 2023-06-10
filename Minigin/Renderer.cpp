@@ -69,6 +69,13 @@ void dae::Renderer::Destroy()
 	}
 }
 
+glm::ivec2 dae::Renderer::GetWindowSize()
+{
+	glm::ivec2 size;
+	SDL_GetWindowSize(m_window, &size.x, &size.y);
+	return size;
+}
+
 void dae::Renderer::RenderTexture(const Texture2D& texture, const float x, const float y, bool center, float angle, bool flip) const
 {
 	int w, h;
