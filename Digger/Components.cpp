@@ -150,18 +150,19 @@ bool PlayerComponent::TakeDamage(bool enemy)
 		it->SetInputEnabled(false);
 	}
 	GetOwner()->GetComponent<dae::SpriteComponent>()->SetTexture("VGRAVE5.gif");
-	if (Lives >= 0)
+	if (Lives >= 0) {
 		dae::Time::GetInstance().SetTimerByEvent(2.f, [this]() {
 			if (auto it = GetOwner()->GetComponent<dae::InputComponent>(); it != nullptr) {
 				it->SetInputEnabled(true);
 			}
-			GetOwner()->GetComponent<GridMoveComponent>()->SetCell(1, 1);
+			GetOwner()->GetComponent<GridMoveComponent>()->SetCell(Start.x, Start.y);
 			GetOwner()->GetComponent<dae::SpriteComponent>()->SetTexture(Sprite);
 			dae::Time::GetInstance().SetTimerByEvent(0.1f, [this]() {
 				Dead = false;
 				});
 			EventHandler::FireEvent(Events::PlayerDeath, GetOwner());
-		});
+			});
+	}
 	else {
 		dae::Time::GetInstance().SetTimerByEvent(2.f, [this]() {
 			EventHandler::FireEvent(Events::PlayerDeath, GetOwner());
@@ -182,6 +183,7 @@ void PlayerComponent::GiveScore(int amount)
 void PlayerComponent::Boost()
 {
 	boosted = true;
+	SystemManager::GetSoundSystem()->Play("boost.wav");
 
 	auto obj = makeFlash();
 
@@ -194,6 +196,7 @@ void PlayerComponent::Boost()
 bool PlayerComponent::TryFireball()
 {
 	if (fireBall && !Dead) {
+		SystemManager::GetSoundSystem()->Play("fireball.wav");
 		fireBall = false;
 		GetOwner()->GetComponent<dae::SpriteComponent>()->SetTexture("fire_" + Sprite);
 		Time::GetInstance().SetTimerByEvent(5.f, [this] {
@@ -211,7 +214,10 @@ void PlayerComponent::LevelChanged(int x, int y)
 	if (Lives < 0) {
 		GetOwner()->SetActive(true);
 		return;
-	};
+	}
+	Start = { x, y };
+	boosted = false;
+	fireBall = true;
 	GetOwner()->GetComponent<GridMoveComponent>()->Init(150.f, Grid::GetObject(0), x, y);
 	Grid::GetObject(0)->EatCell(x, y);
 	GetOwner()->GetComponent<dae::SpriteComponent>()->SetTexture(Sprite);
@@ -267,20 +273,20 @@ void LifeDisplay::Init(PlayerComponent* user)
 {
 	Lives = user->GetLives();
 	Text = GetOwner()->GetComponent<TextComponent>();
-	Text->SetText(std::format("Lives: {}", Lives));
-	user->OnDamaged.Bind(GetOwner(), [Disp = GetPermanentReference()]() {
+	Text->SetText(std::format("P{} Lives: {}", user->GetID() + 1, Lives));
+	user->OnDamaged.Bind(GetOwner(), [Disp = GetPermanentReference(), ID = user->GetID()]() {
 		Disp->Lives--;
-		Disp->Text->SetText(std::format("Lives: {}", Disp->Lives > 0 ? Disp->Lives : 0));
+		Disp->Text->SetText(std::format("P{} Lives: {}", ID + 1, Disp->Lives > 0 ? Disp->Lives : 0));
 	});
 }
 
 void ScoreDisplay::Init()
 {
 	Text = GetOwner()->GetComponent<TextComponent>();
-	Text->SetText(std::format("{:05}", 0));
+	Text->SetText(std::format("{:06}", 0));
 
 	GameGlobals::GetInstance().ScoreGained.Bind(GetOwner(), [Text = Text](int score) {
-		Text->SetText(std::format("{:05}", score));
+		Text->SetText(std::format("{:06}", score));
 		});
 }
 
@@ -369,6 +375,17 @@ void Enemy::OnCreated()
 
 void Enemy::OnDestroyed()
 {
+	if (auto in = GetOwner()->GetComponent<InputComponent>()) {
+		auto obs = GetOwner()->GetScene()->GetAllRootsOfType("enemy");
+		GameObject* next = nullptr;
+		if (obs.size() > 1) {
+			do {
+				next = obs[rand() % obs.size()];
+			} while (next == GetOwner());
+			next->GetComponent<Enemy>()->Possess(in->GetCurrentUser());
+		}
+	}
+
 	EventHandler::FireEvent(Events::EnemyDestroy, GetOwner());
 	Time::GetInstance().ClearTimer(PathChecker);
 	Time::GetInstance().ClearTimer(Booster);
@@ -518,7 +535,8 @@ void Enemy::Possess(User user)
 void Enemy::OnNotified(Event e)
 {
 	if (e.type == Events::GoldBagCrush) {
-		e.object->Notify(Events::ScoreEnemy, GetOwner());
+		auto target = e.object ? e.object : PlayerComponent::GetObject(0)->GetOwner();
+		target->Notify(Events::ScoreEnemy, GetOwner());
 		GetOwner()->Destroy();
 	}
 }
@@ -609,24 +627,12 @@ void GoldBag::State_Falling::Init()
 	auto overlap = bag->GetOwner()->GetComponent<SphereOverlap>();
 	overlap->OnCollision.Bind(bag->GetOwner(), [p = bag->pushPlayer](GameObject* self, GameObject* other) {
 		auto o = self->GetComponent<GridMoveComponent>();
-		auto cell = Grid::GetObject(0)->GetCellInDirection(Direction::Down, o->GetGridLoc().x, o->GetGridLoc().y);
-		auto cell2 = Grid::GetObject(0)->GetCell(o->GetGridLoc().x, o->GetGridLoc().y);
-		if (cell) {
-			bool found = false;
-			for (auto& ob : cell->Objects) {
-				if (ob == other) {
-					found = true;
-					break;
-				}
-			}
-			if (!found)
-				for (auto& ob : cell2->Objects) {
-					if (ob == other) {
-						found = true;
-						break;
-					}
-				}
-			if (found) other->Notify(Events::GoldBagCrush, p);
+		auto g = other->GetComponent<GridMoveComponent>();
+		if (!g) return;
+		auto ol = o->GetGridLoc();
+		auto gl = g->GetGridLoc();
+		if ((ol.y == gl.y && ol.x == gl.x) || (ol.y + 1 == gl.y && (ol.x == gl.x || ol.x == gl.x + 1 || ol.x == gl.x - 1))) {
+			other->Notify(Events::GoldBagCrush, p);
 		}
 	});
 

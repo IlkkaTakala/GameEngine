@@ -13,6 +13,8 @@ void dae::Time::Update(float delta)
 		});
 	for (auto& h : RemoveList) FreeList.push(h);
 	RemoveList.clear();
+	Timers.insert(NewTimers.begin(), NewTimers.end());
+	NewTimers.clear();
 	for (auto& [handle, t] : Timers) {
 		t.elapsed += delta;
 		if (t.elapsed >= t.duration) {
@@ -43,7 +45,7 @@ dae::Timer dae::Time::SetTimerByEvent(float time, const TimerCallback& callback,
 		FreeList.pop();
 	}
 	else {
-		id = Last++;
+		id = ++Last;
 	}
 
 	TimerData t{
@@ -53,7 +55,7 @@ dae::Timer dae::Time::SetTimerByEvent(float time, const TimerCallback& callback,
 		looping
 	};
 
-	Timers.emplace(id, std::move(t));
+	NewTimers.emplace(id, std::move(t));
 
 	return id;
 }
@@ -84,6 +86,8 @@ float dae::Time::GetElapsedTime(const Timer& handle)
 
 void dae::Time::ClearTimer(const Timer& handle)
 {
+	if (handle == 0) return;
+
 	if (std::find(RemoveList.begin(), RemoveList.end(), handle) == RemoveList.end())
 		RemoveList.push_back(handle);
 }
@@ -96,6 +100,8 @@ void dae::Time::ClearTimer(const AsyncTimer& handle)
 void dae::Time::ClearAllTimers()
 {
 	Timers.clear();
+	RemoveList.clear();
+	Last = 0;
 	std::queue<size_t> empty;
 	std::swap(FreeList, empty);
 
@@ -104,6 +110,7 @@ void dae::Time::ClearAllTimers()
 		t->future.get();
 		delete t;
 	}
+	Asyncs.clear();
 }
 
 void dae::Time::AsyncFunc(AsyncTimerData* data, const TimerCallback& callback, float duration, bool loop)

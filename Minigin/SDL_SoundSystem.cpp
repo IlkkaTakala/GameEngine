@@ -61,9 +61,8 @@ enum class SoundEvent
 	Unmute,
 };
 
-void SoundFinished(int) {
-
-}
+void* gImpl;
+void SoundFinished(int);
 
 class SDL_SoundSystem::SoundImpl
 {
@@ -137,6 +136,12 @@ public:
 		EventQueue.push({ muted ? SoundEvent::Mute : SoundEvent::Unmute, 0 });
 	}
 
+	bool IsPlaying(Sound sound)
+	{
+		if (sound >= LoadedSounds.size()) return false;
+		return LoadedSounds[sound].second.Playing;
+	}
+
 private:
 
 	struct InternalParams
@@ -147,9 +152,12 @@ private:
 		std::string Name;
 
 		SoundParameters Params;
+		PlayParameters LastPlayParams;
 	};
 
 	int baseVolume{ 32 };
+
+	friend void SoundFinished(int);
 
 	void ThreadedHandler()
 	{
@@ -176,9 +184,10 @@ private:
 					if (LoadedSounds[play].second.Loaded) {
 						Queue.pop();
 						int channel = Mix_PlayChannel(-1, LoadedSounds[play].first, 0);
-						Mix_Volume(channel, int(data.Volume * baseVolume));
+						Mix_Volume(channel, int(LoadedSounds[play].second.Params.Volume * data.Volume * baseVolume));
 						LoadedSounds[play].second.channel = channel;
 						LoadedSounds[play].second.Playing = channel != -1;
+						LoadedSounds[play].second.LastPlayParams = data;
 					} else EventQueue.push({ SoundEvent::Play, 0 });
 				} break;
 				case SoundEvent::Stop: {
@@ -187,7 +196,7 @@ private:
 				} break;
 				case SoundEvent::Volume: {
 					if (LoadedSounds[Sound].second.Playing)
-						Mix_VolumeChunk(LoadedSounds[Sound].first, int(LoadedSounds[Sound].second.Params.Volume * baseVolume));
+						Mix_VolumeChunk(LoadedSounds[Sound].first, int(LoadedSounds[Sound].second.Params.Volume * LoadedSounds[Sound].second.LastPlayParams.Volume * baseVolume));
 				} break;
 				case SoundEvent::Release: {
 					Mix_FreeChunk(LoadedSounds[Sound].first);
@@ -233,14 +242,36 @@ private:
 	std::map<std::string, Sound> NameTable;
 };
 
+void SoundFinished(int channel)
+{
+	auto s = reinterpret_cast<SDL_SoundSystem::SoundImpl*>(gImpl);
+
+	int i = 0;
+	for (auto& [c, data] : s->LoadedSounds) {
+		if (data.channel == channel) {
+			if (data.LastPlayParams.Looping) {
+				s->Play(i, data.LastPlayParams);
+			}
+			else if (data.Params.AutoRelease) {
+				s->EventQueue.push({ SoundEvent::Release, i });
+			}
+
+			break;
+		}
+		i++;
+	}
+}
+
 SDL_SoundSystem::SDL_SoundSystem()
 {
 	Impl = new SoundImpl();
+	gImpl = Impl;
 }
 
 SDL_SoundSystem::~SDL_SoundSystem()
 {
 	delete Impl;
+	gImpl = nullptr;
 }
 
 void SDL_SoundSystem::SetDataPath(const std::string& path)
@@ -281,4 +312,9 @@ void SDL_SoundSystem::ReleaseSound(Sound sound)
 void SDL_SoundSystem::MuteSounds(bool muted)
 {
 	Impl->Mute(muted);
+}
+
+bool SDL_SoundSystem::IsPlaying(Sound sound)
+{
+	return Impl->IsPlaying(sound);
 }

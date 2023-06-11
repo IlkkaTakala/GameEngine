@@ -17,9 +17,10 @@ public:
 	void StopSound(Sound sound) override;
 	void ReleaseSound(Sound sound) override;
 	void MuteSounds(bool muted) override;
+	bool IsPlaying(Sound sound) override;
 
 private:
-	 
+	friend void SoundFinished(int);
 	class SoundImpl;
 	SoundImpl* Impl;
 };

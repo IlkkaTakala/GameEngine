@@ -5,13 +5,15 @@ using Sound = size_t;
 
 struct SoundParameters
 {
-	bool AutoRelease{ true };
+	bool AutoRelease{ false };
 	float Volume{ 1.f };
+	bool Looping{ false };
 };
 
 struct PlayParameters
 {
 	float Volume{ 1.f };
+	bool Looping{ false };
 };
 
 class SoundManager
@@ -29,6 +31,7 @@ public:
 	virtual void StopSound(Sound sound) = 0;
 	virtual void ReleaseSound(Sound sound) = 0;
 	virtual void MuteSounds(bool muted) = 0;
+	virtual bool IsPlaying(Sound sound) = 0;
 
 	virtual ~SoundManager() = default;
 	SoundManager(const SoundManager& other) = delete;

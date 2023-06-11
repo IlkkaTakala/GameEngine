@@ -53,6 +53,7 @@ namespace dae
 		size_t Last{ 0 };
 		std::vector<size_t> RemoveList;
 		std::map<size_t, TimerData> Timers;
+		std::map<size_t, TimerData> NewTimers;
 		std::queue<size_t> FreeList;
 		std::list<AsyncTimerData*> Asyncs;
 	};

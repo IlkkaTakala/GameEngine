@@ -34,7 +34,7 @@ namespace dae {
 		G* Get() const {
 			if (G::ObjectList_counter() == check) return (G*)ptr;
 			if (G::StaticType() != type) return nullptr;
-			ptr = (T*)G::GetObject(ID);
+			ptr = (T*)G::GetObject((size_t)ID);
 			check = G::ObjectList_counter();
 			return (G*)ptr;
 		}
@@ -43,7 +43,7 @@ namespace dae {
 		{
 			auto t = BaseComponent::__object_map()[type];
 			if (t->ObjectList_counter_virtual() == check) return ptr;
-			ptr = (T*)t->__get_object_as_base(ID);
+			ptr = (T*)t->__get_object_as_base((size_t)ID);
 			check = t->ObjectList_counter_virtual();
 			return ptr;
 		}

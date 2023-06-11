@@ -100,6 +100,7 @@ private:
 	dae::User UserID;
 	std::string Name;
 	std::string Sprite;
+	glm::ivec2 Start;
 
 	int emeraldStreak{ 0 };
 

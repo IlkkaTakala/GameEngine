@@ -1,17 +1,19 @@
 #include "Highscores.h"
 #include "File.h"
 
+const char* highScorePath = "../Data/highscores.sco";
+
 void Highscores::Initialize()
 {
 	using namespace dae;
 
-	file = File::OpenFile("highscores.sco");
+	file = File::OpenFile(highScorePath);
 	if (file) {
 		Scores = file.ReadObject<HallOfFame>();
 	}
 	else {
-		File::CreateFile("highscores.sco");
-		file = File::OpenFile("highscores.sco");
+		File::CreateFile(highScorePath);
+		file = File::OpenFile(highScorePath);
 		Scores = HallOfFame();
 	}
 }

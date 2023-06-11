@@ -138,6 +138,9 @@ GameObject* makePlayer(dae::User user, dae::Scene& scene, float speed, int x, in
 		if (ref->GetComponent<PlayerComponent>()->TryFireball())
 		makeFireball(ref);
 	});
+	input->BindAction("Mute", [ref = go1]() {
+		GameGlobals::GetInstance().ToggleMuted();
+	});
 
 	//makeDisplay(player, scene);
 
@@ -277,7 +280,7 @@ void makeGoldBag(int x, int y)
 		grid->Eat(dir, x, y);
 	});
 
-	overlap->SetRadius(15.f);
+	overlap->SetRadius(8.f);
 	sprite->SetTexture("VSBAG.gif");
 	sprite->SetSize(glm::vec3{ SpriteSize });
 
@@ -453,7 +456,7 @@ LevelData LoadLevel(const std::string& path)
 		pathV.push_back((Direction)d);
 	}
 
-	makeClearer(1, 1, enCount, pathV);
+	makeClearer(Data.playerStart.x, Data.playerStart.y, enCount, pathV);
 
 	return Data;
 }
