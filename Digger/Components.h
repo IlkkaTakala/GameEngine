@@ -76,9 +76,10 @@ public:
 		Sprite = sprite;
 	}
 
-	bool TakeDamage();
+	bool TakeDamage(bool enemy = false);
 	bool IsAlive() { return Lives > 0; }
 	void GiveScore(int amount);
+	void Boost();
 
 	bool TryFireball();
 
@@ -102,6 +103,7 @@ private:
 
 	int emeraldStreak{ 0 };
 
+	bool boosted{ false };
 	bool fireBall{ true };
 	bool Dead{ false };
 	int Lives{ 3 };

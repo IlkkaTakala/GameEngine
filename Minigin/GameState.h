@@ -44,6 +44,7 @@ public:
 	virtual void Exit() {}
 protected:
 	virtual ~GameState() {}
+	bool IsActive{};
 private:
 	friend class StateManager;
 	std::string name;

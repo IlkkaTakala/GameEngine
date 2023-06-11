@@ -15,14 +15,19 @@ void dae::StateManager::CheckState()
 	if (CurrentState == 0) {
 		if (!States.empty()) {
 			CurrentState = States.begin()->first;
+			States[CurrentState]->IsActive = true;
 			States[CurrentState]->Init();
 		}
 		else return;
 	}
 	for (auto& p : States[CurrentState]->Paths) {
 		if (p.second(States[CurrentState])) {
-			if (auto it = States.find(CurrentState); it != States.end()) it->second->Exit();
+			if (auto it = States.find(CurrentState); it != States.end()) {
+				it->second->IsActive = false;
+				it->second->Exit();
+			}
 			CurrentState = p.first;
+			States[CurrentState]->IsActive = true;
 			States[CurrentState]->Init();
 		}
 	}

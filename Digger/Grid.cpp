@@ -57,7 +57,18 @@ void Grid::Init(const GridData& data)
 	EatTexs.push_back(ResourceManager::GetInstance().LoadTexture("VLBLOB.png"));
 	EatTexs.push_back(ResourceManager::GetInstance().LoadTexture("TILE.png"));
 
-	auto Back = ResourceManager::GetInstance().LoadTexture("VBACK1.gif");
+	static std::vector<std::string> Names {
+		"VBACK1.gif",
+		"VBACK2.gif",
+		"VBACK3.gif",
+		"VBACK4.gif",
+		"VBACK5.gif",
+		"VBACK6.gif",
+		"VBACK7.gif",
+		"VBACK8.gif",
+	};
+
+	auto Back = ResourceManager::GetInstance().LoadTexture(Names[data.type]);
 	SDL_SetRenderTarget(renderer, Texture->GetSDLTexture());
 	SDL_RenderClear(renderer);
 	Renderer::GetInstance().RenderTextureTiling(*Back, 0, 0, w, h);

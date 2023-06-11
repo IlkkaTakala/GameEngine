@@ -9,6 +9,7 @@ struct GridData
 	int x, y;
 	int cells_x, cells_y;
 	int size;
+	int type;
 };
 
 struct CellData

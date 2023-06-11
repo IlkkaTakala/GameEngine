@@ -227,7 +227,7 @@ GameObject* makeEnemy(int x, int y)
 		});
 	overlap->OnCollision.Bind(go1, [](GameObject* self, GameObject* other) {
 		if (other->HasComponent<PlayerComponent>()) {
-			if (other->GetComponent<PlayerComponent>()->TakeDamage()) {
+			if (other->GetComponent<PlayerComponent>()->TakeDamage(true)) {
 				SystemManager::GetSoundSystem()->Play("bite.wav");
 				self->Destroy();
 			}
@@ -321,6 +321,25 @@ void makeSpawner(int x, int y, int count)
 	Scene->Add(go);
 }
 
+void makeBonus(int x, int y)
+{
+	auto go1 = new GameObject("bonus");
+	SceneManager::GetInstance().GetCurrentScene()->Add(go1);
+	auto trans = CreateComponent<TransformComponent>(go1);
+	auto sprite = CreateComponent<SpriteComponent>(go1);
+	auto overlap = CreateComponent<SphereOverlap>(go1);
+
+	overlap->OnCollision.Bind(go1, [](GameObject* self, GameObject* other) {
+		other->Notify(Events::BonusPickup, self);
+		});
+	auto g = Grid::GetObject(0);
+	trans->SetPosition(g->GetCellCenter(x, y));
+
+	overlap->SetRadius(SpriteSize / 2);
+	sprite->SetTexture("VBONUS.png");
+	sprite->SetSize(SpriteSize * 0.8f);
+}
+
 void makeFireball(dae::GameObject* player)
 {
 	auto go1 = new GameObject("fireball");
@@ -360,23 +379,43 @@ void makeFireball(dae::GameObject* player)
 	sprite->SetSize(SpriteSize * 0.2f);
 }
 
+GameObject* makeFlash()
+{
+	auto go1 = new GameObject("bonus");
+	SceneManager::GetInstance().GetCurrentScene()->Add(go1);
+	auto trans = CreateComponent<TransformComponent>(go1);
+	auto sprite = CreateComponent<SpriteComponent>(go1);
+
+
+	auto size = Renderer::GetInstance().GetWindowSize();
+	trans->SetPosition({ size / 2, 0.f });
+	sprite->SetTexture("bg.png");
+	sprite->SetSize(size);
+
+	return go1;
+}
+
 LevelData LoadLevel(const std::string& path)
 {
 	File f = File::OpenFile(path);
 	if (!f) return { };
 
 	LevelData Data;
-	int cx = 0, cy = 0;
+	int cx = 0, cy = 0, type = 0;
 	int Margin = 20;
 	int Width = 840 - Margin * 2;
 	int Height = 480 - Margin * 2;
 	f.Read((char*)&cx, sizeof(int));
 	f.Read((char*)&cy, sizeof(int));
+	f.Read((char*)&type, sizeof(int));
 	GridData data{
-		Margin + (Width % TileSize) / 2, Margin + (Height % TileSize) / 2, cx, cy, TileSize
+		Margin + (Width % TileSize) / 2, Margin + (Height % TileSize) / 2, cx, cy, TileSize, type
 	};
 	makeGrid(data);
 	
+	glm::ivec2 bonus{};
+	f.Read((char*)&bonus, sizeof(bonus));
+	makeBonus(bonus.x, bonus.y);
 
 	f.Read((char*)&Data.playerStart, sizeof(Data.playerStart));
 	f.Read((char*)&Data.playerStart2, sizeof(Data.playerStart2));
@@ -430,6 +469,12 @@ void SaveLevel(const std::string& path)
 
 	f.Write((char*)&g->Data.cells_x, sizeof(int));
 	f.Write((char*)&g->Data.cells_y, sizeof(int));
+
+	int type = 0;
+	f.Write((char*)&type, sizeof(int));
+
+	glm::ivec2 bonus{2, 10};
+	f.Write((char*)&bonus, sizeof(bonus));
 	
 	auto ploc = PlayerComponent::GetObject(0)->GetOwner()->GetComponent<GridMoveComponent>()->GetGridLoc();
 	f.Write((char*)&ploc, sizeof(ploc));

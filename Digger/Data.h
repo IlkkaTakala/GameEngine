@@ -11,6 +11,7 @@ namespace Events
 	constexpr int ScoreEmerald = 121;
 	constexpr int ScoreGold = 122;
 	constexpr int ScoreEnemy = 123;
+	constexpr int BonusPickup = 124;
 	constexpr int GoldBagCrush = 102;
 
 	constexpr int EnemyDestroy = 141;

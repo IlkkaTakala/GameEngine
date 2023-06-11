@@ -28,6 +28,7 @@ public:
 	virtual void SetVolume(Sound sound, float volume) = 0;
 	virtual void StopSound(Sound sound) = 0;
 	virtual void ReleaseSound(Sound sound) = 0;
+	virtual void MuteSounds(bool muted) = 0;
 
 	virtual ~SoundManager() = default;
 	SoundManager(const SoundManager& other) = delete;

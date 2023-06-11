@@ -57,6 +57,8 @@ enum class SoundEvent
 	Volume,
 	Release,
 	Quit,
+	Mute,
+	Unmute,
 };
 
 void SoundFinished(int) {
@@ -130,6 +132,11 @@ public:
 		EventQueue.push({ SoundEvent::Release, sound });
 	}
 
+	void Mute(bool muted)
+	{
+		EventQueue.push({ muted ? SoundEvent::Mute : SoundEvent::Unmute, 0 });
+	}
+
 private:
 
 	struct InternalParams
@@ -201,6 +208,12 @@ private:
 					Running = false;
 					Mix_Quit();
 				} break;
+				case SoundEvent::Mute: {
+					Mix_MasterVolume(0);
+				} break;
+				case SoundEvent::Unmute: {
+					Mix_MasterVolume(128);
+				} break;
 			default:
 				break;
 			}
@@ -263,4 +276,9 @@ void SDL_SoundSystem::StopSound(Sound sound)
 void SDL_SoundSystem::ReleaseSound(Sound sound)
 {
 	Impl->ReleaseSound(sound);
+}
+
+void SDL_SoundSystem::MuteSounds(bool muted)
+{
+	Impl->Mute(muted);
 }

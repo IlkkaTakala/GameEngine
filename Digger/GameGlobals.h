@@ -16,6 +16,8 @@ public:
 	char* GetPlayerName(int user) { return (char*)PlayerNames[user]; }
 	GameType GetType() const { return Type; }
 	void SetType(GameType type) { Type = type; }
+	
+	void ToggleMuted();
 
 	int GetScore() const { return Score; }
 	void AddScore(int value) { Score += value; ScoreGained.Broadcast(Score); }
@@ -27,5 +29,6 @@ private:
 	GameType Type{};
 	char PlayerNames[2][4];
 	int Score;
+	bool Muted;
 };
 

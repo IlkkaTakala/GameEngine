@@ -131,13 +131,17 @@ void GridMoveComponent::UpdateDirection()
 	}
 }
 
-bool PlayerComponent::TakeDamage()
+bool PlayerComponent::TakeDamage(bool enemy)
 {
 	if (Dead) return false;
+	if (boosted) {
+		if (enemy) GetOwner()->Notify(Events::ScoreEnemy, nullptr);
+		return true;
+	}
 	Lives--;
 	SystemManager::GetSoundSystem()->Play("death.wav");
 	OnDamaged.Broadcast();
-	if (Lives <= 0) EventHandler::FireEvent(Events::PlayerFinalScore, GetOwner());
+	if (Lives < 0) EventHandler::FireEvent(Events::PlayerFinalScore, GetOwner());
 	emeraldStreak = 0;
 	Dead = true;
 	GetOwner()->GetComponent<GridMoveComponent>()->SetDirection(Direction::None, true);
@@ -146,7 +150,7 @@ bool PlayerComponent::TakeDamage()
 		it->SetInputEnabled(false);
 	}
 	GetOwner()->GetComponent<dae::SpriteComponent>()->SetTexture("VGRAVE5.gif");
-	if (Lives > 0)
+	if (Lives >= 0)
 		dae::Time::GetInstance().SetTimerByEvent(2.f, [this]() {
 			if (auto it = GetOwner()->GetComponent<dae::InputComponent>(); it != nullptr) {
 				it->SetInputEnabled(true);
@@ -175,6 +179,18 @@ void PlayerComponent::GiveScore(int amount)
 	EventHandler::FireEvent(Events::PlayerScoreGained, GetOwner());
 }
 
+void PlayerComponent::Boost()
+{
+	boosted = true;
+
+	auto obj = makeFlash();
+
+	Time::GetInstance().SetTimerByEvent(4.f, [obj, this] {
+		obj->Destroy();
+		boosted = false;
+		});
+}
+
 bool PlayerComponent::TryFireball()
 {
 	if (fireBall && !Dead) {
@@ -192,6 +208,10 @@ bool PlayerComponent::TryFireball()
 
 void PlayerComponent::LevelChanged(int x, int y)
 {
+	if (Lives < 0) {
+		GetOwner()->SetActive(true);
+		return;
+	};
 	GetOwner()->GetComponent<GridMoveComponent>()->Init(150.f, Grid::GetObject(0), x, y);
 	Grid::GetObject(0)->EatCell(x, y);
 	GetOwner()->GetComponent<dae::SpriteComponent>()->SetTexture(Sprite);
@@ -233,6 +253,10 @@ void PlayerComponent::OnNotified(Event e)
 	case Events::ScoreEnemy:
 		GiveScore(250);
 		break;
+	case Events::BonusPickup:
+		e.object->Destroy();
+		Boost();
+		break;
 
 	default:
 		break;
@@ -241,12 +265,13 @@ void PlayerComponent::OnNotified(Event e)
 
 void LifeDisplay::Init(PlayerComponent* user)
 {
+	Lives = user->GetLives();
 	Text = GetOwner()->GetComponent<TextComponent>();
 	Text->SetText(std::format("Lives: {}", Lives));
 	user->OnDamaged.Bind(GetOwner(), [Disp = GetPermanentReference()]() {
 		Disp->Lives--;
-	Disp->Text->SetText(std::format("Lives: {}", Disp->Lives));
-		});
+		Disp->Text->SetText(std::format("Lives: {}", Disp->Lives > 0 ? Disp->Lives : 0));
+	});
 }
 
 void ScoreDisplay::Init()

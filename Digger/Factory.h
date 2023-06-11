@@ -20,7 +20,9 @@ void makeEmerald(int x, int y);
 void makeGoldBag(int x, int y);
 void makeClearer(int x, int y, int count, const std::vector<Direction>& path);
 void makeSpawner(int x, int y, int count);
+void makeBonus(int x, int y);
 void makeFireball(dae::GameObject* player);
+dae::GameObject* makeFlash();
 
 struct LevelData
 {

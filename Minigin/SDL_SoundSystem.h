@@ -16,6 +16,7 @@ public:
 	void SetVolume(Sound sound, float volume) override;
 	void StopSound(Sound sound) override;
 	void ReleaseSound(Sound sound) override;
+	void MuteSounds(bool muted) override;
 
 private:
 	 
