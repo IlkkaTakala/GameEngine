@@ -9,7 +9,7 @@ namespace dae
 {
 
 	typedef size_t Timer;
-	typedef void* AsyncTimer;
+	typedef size_t AsyncTimer;
 	typedef std::function<void(void)> TimerCallback;
 
 	struct TimerData
@@ -32,7 +32,7 @@ namespace dae
 		float GetElapsedTime(const Timer& handle);
 
 		void ClearTimer(const Timer& handle);
-		void ClearTimer(const AsyncTimer& handle);
+		void ClearAsyncTimer(const AsyncTimer& handle);
 		void ClearAllTimers();
 
 		float GetDelta() { return LastDelta; }
@@ -51,11 +51,12 @@ namespace dae
 		float TotalTime{ 0.f };
 
 		size_t Last{ 0 };
+		size_t LastAsync{ 0 };
 		std::vector<size_t> RemoveList;
 		std::map<size_t, TimerData> Timers;
 		std::map<size_t, TimerData> NewTimers;
 		std::queue<size_t> FreeList;
-		std::list<AsyncTimerData*> Asyncs;
+		std::map<size_t, AsyncTimerData*> Asyncs;
 	};
 
 }

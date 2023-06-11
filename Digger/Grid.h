@@ -34,6 +34,7 @@ static glm::ivec2 Opposites[] = {
 		{ 1, 0 },
 		{ 0, 1 },
 		{ -1, 0 },
+		{ 0, 0 },
 };
 
 namespace dae {

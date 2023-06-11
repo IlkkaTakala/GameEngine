@@ -220,7 +220,7 @@ private:
 	void OnNotified(dae::Event e) override;
 	void Boost();
 
-	dae::Timer PathChecker;
+	dae::AsyncTimer PathChecker;
 	dae::Timer Booster;
 	dae::Timer BoostEnd;
 

@@ -63,9 +63,9 @@ namespace Astar
 			return Node;
 		};
 
-		auto getNextLegalStates = [&ValidPreCheck, &ValidPostCheck, &transition, &Actions, &NodeList](NodeType n) -> std::vector<NodeType>&& {
+		auto getNextLegalStates = [&ValidPreCheck, &ValidPostCheck, &transition, &Actions, &NodeList](NodeType n) -> std::vector<NodeType> {
 
-			static std::vector<NodeType> nextStates;
+			std::vector<NodeType> nextStates;
 			nextStates.clear();
 			nextStates.reserve(Actions.size());
 
@@ -78,7 +78,7 @@ namespace Astar
 				}
 				else delete newState;
 			}
-			return std::move(nextStates);
+			return nextStates;
 		};
 
 		while (currentNode != 0) {

@@ -59,6 +59,9 @@ void GridMoveComponent::SetCell(int x, int y)
 void GridMoveComponent::SetDirection(Direction dir, bool force)
 {
 	if (!force && IsInProgress()) return;
+	if (dir != Direction::None && GetCanMove) {
+		if (!GetCanMove(gridComponent.Get(), dir, grid.x, grid.y)) return;
+	}
 	direction = dir;
 	OnDirectionChanged.Broadcast(dir);
 	target = nullptr;
@@ -70,9 +73,7 @@ bool GridMoveComponent::Move(float delta)
 	if (!gridComponent.IsValid()) return false;
 	UpdateDirection();
 	if (!target) return true;
-	if (GetCanMove) {
-		if (!GetCanMove(gridComponent.Get(), direction, grid.x, grid.y)) return true;
-	}
+	
 	progress += delta * speed;
 	int mult = direction == Direction::Up || direction == Direction::Left ? -1 : 1;
 	*target += mult * delta * speed;
@@ -387,7 +388,7 @@ void Enemy::OnDestroyed()
 	}
 
 	EventHandler::FireEvent(Events::EnemyDestroy, GetOwner());
-	Time::GetInstance().ClearTimer(PathChecker);
+	Time::GetInstance().ClearAsyncTimer(PathChecker);
 	Time::GetInstance().ClearTimer(Booster);
 	Time::GetInstance().ClearTimer(BoostEnd);
 	delete PathLock;
@@ -471,8 +472,9 @@ void RefreshPath(ComponentRef<Enemy> ref)
 		return 1.f;
 	};
 
-	auto PathCost = [](const Vec2& /*state*/, float cost) -> float {
-		return (float)cost;
+	auto PathCost = [target](const Vec2& state, float cost) -> float {
+		Vec2 dist = target - state;
+		return (float)(cost + 2.0f * sqrt(dist[0] * dist[0] + dist[1] * dist[1]));
 	};
 	auto path = Astar::FindActionPath<Vec2, Direction>(
 		{ start.x, start.y }, actions, validPreCheck,
@@ -504,7 +506,7 @@ void Enemy::Init()
 	
 	PathLock = new std::mutex();
 
-	PathChecker = Time::GetInstance().SetTimerByEvent(1.f, [ref = GetPermanentReference()]() {
+	PathChecker = Time::GetInstance().LaunchAsyncTimerByEvent(0.5f, [ref = GetPermanentReference()]() {
 		RefreshPath(ref);
 	}, true);
 

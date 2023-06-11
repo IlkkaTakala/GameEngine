@@ -28,13 +28,13 @@ void dae::Time::Update(float delta)
 		}
 	}
 
-	for (auto& t : Asyncs) {
-		if (t->cleared) {
+	for (auto& [h, t] : Asyncs) {
+		if (t && t->cleared) {
 			delete t;
 			t = nullptr;
 		}
 	}
-	Asyncs.remove_if([](auto t) { return t == nullptr; });
+	std::erase_if(Asyncs, [](auto& t) { return t.second == nullptr; });
 }
 
 dae::Timer dae::Time::SetTimerByEvent(float time, const TimerCallback& callback, bool looping)
@@ -63,9 +63,10 @@ dae::Timer dae::Time::SetTimerByEvent(float time, const TimerCallback& callback,
 dae::AsyncTimer dae::Time::LaunchAsyncTimerByEvent(float time, TimerCallback callback, bool looping)
 {
 	auto t = new AsyncTimerData();
-	Asyncs.push_back(t);
+	size_t id = ++LastAsync;
+	Asyncs.emplace(id, t);
 	t->future = std::async(std::launch::async, &Time::AsyncFunc, this, t, callback, time, looping);
-	return t;
+	return id;
 }
 
 float dae::Time::GetRemainingTime(const Timer& handle)
@@ -92,9 +93,10 @@ void dae::Time::ClearTimer(const Timer& handle)
 		RemoveList.push_back(handle);
 }
 
-void dae::Time::ClearTimer(const AsyncTimer& handle)
+void dae::Time::ClearAsyncTimer(const AsyncTimer& handle)
 {
-	((AsyncTimerData*)handle)->close = true;
+	if (auto it = Asyncs.find(handle); it != Asyncs.end())
+		it->second->close = true;
 }
 
 void dae::Time::ClearAllTimers()
@@ -105,9 +107,9 @@ void dae::Time::ClearAllTimers()
 	std::queue<size_t> empty;
 	std::swap(FreeList, empty);
 
-	for (auto& t : Asyncs) {
+	for (auto& [h, t] : Asyncs) {
 		t->close = true;
-		t->future.get();
+		t->future.wait();
 		delete t;
 	}
 	Asyncs.clear();
